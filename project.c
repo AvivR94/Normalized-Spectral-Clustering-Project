@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #define EPSILON = 1.0*pow(10,-5)
-
-//###########################################################################
+//Hi
+//##########################################################################
 //calculate the multiplication of two matrices
 def matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result):
     for (i = 0; i < rows_num; i++)
