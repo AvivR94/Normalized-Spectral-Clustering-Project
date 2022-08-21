@@ -5,7 +5,6 @@
 #include <assert.h>
 #define EPSILON = 1.0*pow(10,-5)
 
-
 int main(int argc, char* argv[]){
 if (agrc != 4){
     print ("Invalid Input");
