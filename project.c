@@ -5,14 +5,20 @@
 #include <assert.h>
 #define EPSILON = 1.0*pow(10,-5)
 
+typedef struct eigens{
+    int index;
+    double value;
+    double* vector;
+}eigens;
 
 int main(int argc, char* argv[]){
 if (agrc != 4){
     print ("Invalid Input");
     return 0;
 }
-char* goal = sys.argv[1] //the enum type
-input_filename = sys.argv[2]; //the input
+k = atoi(argv[1]);
+char* goal = sys.argv[2] //the enum type
+input_filename = sys.argv[3]; //the input
 
 temp_file = fopen(input_filename, "r");
 if (temp_file == NULL){
@@ -69,7 +75,6 @@ while(fscanf(temp_file, "%lf%c",&vector_item,&comma) == 2){
     }
 
 
-//reallocation
 for(i=0; i<n; i++){
        free(vectors_matrix[i]);
    }
@@ -211,7 +216,7 @@ void eigengap_heuristic(double** vectors_matrix, int n, int vec_length){
         eigenvalues[i] = laplacian_matrix[i][i]
     }
 
-    qsort(eigensArray, n, sizeof(struct eigens), comparator); //to build it's coparator!!!!!
+    qsort(eigensArray, n, sizeof(struct eigens), comparator);
 
   
     //Calculating the deltas
@@ -233,7 +238,7 @@ void eigengap_heuristic(double** vectors_matrix, int n, int vec_length){
 }
 //###########################################################################
 //jacobi algorithm
-void lnorm(double** vectors_matrix, int n, int vec_length){
+void jacobi(double** vectors_matrix, int n, int vec_length){
 
     double off_a = 0;
     double off_a_tag= 0;
@@ -365,24 +370,66 @@ void lnorm(double** vectors_matrix, int n, int vec_length){
     
     } while((off_a - off_a_tag) > EPSILON && rotations_number <= 100);
 
+
+    v_trans_matrix = matrix_Transpose(v_matrix, n);
+    
+    eigensArray = (eigens*) calloc(n, sizeof(struct eigens));
+    assert(eigensArray != NULL);
+
+    for(i = 0; i < n; i++){
+        eigensArray[i].index = i;
+        eigensArray[i].value = vectors_matrix[i][i];
+        eigensArray[i].vector = copy_to_eigen_Values(v_trans_matrix[i], n);
+    }
+
+
     for(i = 0; i < n ; i++){
         free(p_matrix[i]);
         free(to_copy[i]);
         free(temp[i]);
         free(v_matrix[i]);
+        free(v_trans_matrix[i]);
     }
+    free(v_trans_matrix)
     free(p_matrix);
     free(union_matrix);
     free(temp);
     free(v_matrix);
+
+    //to add prints
+
+    qsort(eigensArray, n, sizeof(struct eigens), comparator);
+    return eigensArray;
+}
+
+//###############################################################
+//given a matrix this function return the transpose matrix
+double** matrix_Transpose(double** mat, int n){
+    trans_matrix = (double**) calloc(n, sizeof(double*));
+    assert(trans_matrix != NULL);
+
+    for(i = 0; i < n; i++){
+        trans_matrix[i] = (double*) calloc(n, sizeof(double));
+        assert(trans_matrix[i] != NULL);
+    }
+
+    for(i=0; i<n; i++){
+        for(j=0; j<n; j++){
+            trans_matrix[i][j] = mat[j][i];
+        }
+    }
+
+    return trans_matrix;
 }
 
 //###############################################################
 
 void spk(double** vectors_matrix, int n, int vec_length, int k){
+    //to build cover functions to each goal
     w_matrix = wam(vectors_matrix, n, vec_length);
     d_matrix = ddg(w_matrix, n, vec_length);
-    l_matrix = lnorm(vectors_matrix, n, vec_length);
+    l_matrix = lnorm(d_matrix, n, vec_length);
+    eigens_arr = jacobi(l_matrix, n, vec_length);
 
     if(k == 0){
         k = eigengap_heuristic(l_matrix, n, vec_length);
@@ -398,5 +445,78 @@ void spk(double** vectors_matrix, int n, int vec_length, int k){
     free(w_matrix);
     free(d_matrix);
     free(l_matrix);
+}
+
+
+ //comparator func in order to sort a list of eigen structs
+
+int comparator (const void* first, const void* second)
+{
+    struct eigens* e1 =  (struct eigens*) first;
+    struct eigens* e2 =  (struct eigens*) second;
+
+    if (e1->value > e2->value)
+        return 1;
+    else if (e1->value < e2->value) 
+        return -1;
+    else if (e1->index < e2->index) 
+        return -1;
+    else return 0;
+}
+
+
+//
+double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
+    t_matrix_eigen = (double**) calloc(n, sizeof(double*));
+    assert(matTeigen != NULL);
+    matU = (double**) calloc(n, sizeof(double*));
+    assert(matU != NULL);
+
+    for(i = 0; i < n; i++){
+        t_matrix_eigen[i] = calloc(k, sizeof(double));
+        assert(t_matrix_eigen[i] != NULL);
+        matU[i] = calloc(k, sizeof(double));
+        assert(matU[i] != NULL);
+
+    }
+
+    for(i=0; i<k; i++){
+        for(j=0; j<n; j++){
+             matU[j][i] = eigensArray[i].vector[j];
+        }
+    }
+
+    for(i=0; i<n; i++){
+        dist = 0;
+        for(j=0; j<k; j++){
+            dist += matU[i][j] * matU[i][j];
+        }
+        dist = sqrt(dist);
+        for(j=0; j<k; j++){
+            if(dist != 0){
+                t_matrix_eigen[i][j] = ((matU[i][j]) / (dist));
+            } else {
+                t_matrix_eigen[i][j] = 0.0;
+            }
+        }
+    }
+
+    for(i=0; i<n; i++){
+        free(matU[i]);
+    }
+    free(matU);
+
+    return t_matrix_eigen;
+}
+
+ //copy vector into eigen struct.
+ 
+double* copy_to_eigen_Values(double* vec_matrix, int n){
+    vector = (double*) calloc(n, sizeof(double));
+    assert(vector != NULL);
+    for(j = 0; j < n; j++){
+        vector[j] = vec_matrix[j];
+    }
+    return vector;
 }
 
