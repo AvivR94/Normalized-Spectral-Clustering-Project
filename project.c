@@ -1,37 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
+#include <assert.h>
 #define EPSILON = 1.0*pow(10,-5)
 
-//###########################################################################
-//calculate the multiplication of two matrices
-def matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result):
-    for (i = 0; i < rows_num; i++)
-        for (j = 0; j < columns_num; j++)
-            for (k = 0; k < rows_num; k++)
-                result[i][j] += mat1[i][k] * mat2[k][j];
-
-//###########################################################################
-//free the allocations
-void double_free(double** p, int size_of_block){
-    int i;
-    for (i = 0; i < size_of_block; i++){
-       free(p[i]);
-       }
-    free(p);
-}
-
-//###########################################################################
 
 int main(int argc, char* argv[]){
+if (agrc != 4){
+    print ("Invalid Input");
+    return 0;
+}
 char* goal = sys.argv[1] //the enum type
 input_filename = sys.argv[2]; //the input
+
 temp_file = fopen(input_filename, "r");
 if (temp_file == NULL){
-    Printf("An Error Has Occurred");
-    return 1;
+    printf("An Error Has Occurred");
+    return 0;
 }
-
 
 //count what is the number of vectors n and their length vec_length
 first = 0;
@@ -65,147 +52,218 @@ while(fscanf(temp_file, "%lf%c",&vector_item,&comma) == 2){
     }
 }
 
+//check which goal to choose
+    if (strcmp(goal, "spk") == 0){
+        spk(vectors_matrix, n, vec_length, sys.argv[3]);    
+    else if(strcmp(goal, "wam") == 0){
+        wam(vectors_matrix, n, vec_length);
+    }
+    else if (strcmp(goal, "ddg") == 0){
+        ddg(vectors_matrix, n, vec_length);
+    }
+    else if (strcmp(goal, "lnorm") == 0){
+        lnorm(vectors_matrix, n, vec_length);
+    }
+    else if (strcmp(goal, "jacobi") == 0){
+        funcJacobi(vectors_matrix, n, vec_length);
+    }
+
+
+//reallocation
+for(i=0; i<n; i++){
+       free(vectors_matrix[i]);
+   }
+free(vectors_matrix);
+
 fclose(temp_file);
+return 0;
 }
+
+//###########################################################################
+//calculate the multiplication of two matrices
+def matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result):
+    for (i = 0; i < rows_num; i++)
+        for (j = 0; j < columns_num; j++)
+            for (k = 0; k < rows_num; k++)
+                result[i][j] += mat1[i][k] * mat2[k][j];
+
+//###########################################################################
+//free the allocations
+void double_free(double** p, int size_of_block){
+    int i;
+    for (i = 0; i < size_of_block; i++){
+       free(p[i]);
+       }
+    free(p);
+}
+
 
 //##################################################################
 //case wam: 1.1.1 The Weighted Adjacency Matrix
+void wam(double** vectors_matrix, int n, int vec_length){
 
-//initiallization of matrix W
-double** w_matrix = (double**)calloc(n, sizeof(double*));
+    //initiallization of matrix W
+    double** w_matrix = (double**)calloc(n, sizeof(double*));
 
-//calculating the values in each cell
-int sum = 0;
-for (i = 0; i < n; i++)
-    w_matrix[i][i] = 0 //the diagonal line in matrix's values are 0
-for (i = 0; i < n; i++)
-    for (j= i + 1; j < n; j++){
-        sum = 0;
-        for (s = 0; s < d; s++)
-            sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2)
-        w_matrix[i][j] = math.exp(pow(sum,(0.5))/-2);
-        w_matrix[j][i] = math.exp(pow(sum,(0.5))/-2);
+    //calculating the values in each cell
+    int sum = 0;
+    for (i = 0; i < n; i++)
+        w_matrix[i][i] = 0 //the diagonal line in matrix's values are 0
+    for (i = 0; i < n; i++){
+        for (j= i + 1; j < n; j++){
+            sum = 0;
+            for (s = 0; s < d; s++)
+                sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2)
+            w_matrix[i][j] = math.exp(pow(sum,(0.5))/-2);
+            w_matrix[j][i] = math.exp(pow(sum,(0.5))/-2);
+        }
     }
 
+    for(i = 0; i < n; i++){
+        free(w_matrix[i]);
+    }
+
+    free(w_matrix);
+
+}
 //###########################################################################
 //case ddg: 1.1.2 The Diagonal Degree Matrix
-//initiallization
-double** d_matrix = (double**)calloc(n, sizeof(double*));
-for (i = 0; i < n; i++)
-    for (j = 0; j < n; j++)
-        d_matrix[i][j] = 0;
+void ddg(double** vectors_matrix, int n, int vec_length){
+    //initiallization
+    double** d_matrix = (double**)calloc(n, sizeof(double*));
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            d_matrix[i][j] = 0;
 
-//calculate the sum of each row and place in the diagonal line of d_matrix
-for (i = 0; i < n; i++){
-    for (j = 0; j < n; j++)
-        d_matrix[i][i] += w_matrix[i][j];
+    //calculate the sum of each row and place in the diagonal line of d_matrix
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++)
+            d_matrix[i][i] += w_matrix[i][j];
+    }
+
+    for(i = 0; i < n ; i++){
+        free(d_matrix[i]);
+    }
+    free(d_matrix);
 }
         
 
 //###########################################################################
 //case lnorm: 1.1.3  The Normalized Graph Laplacian
 
-//Laplacian_matrix initiallization
-double** laplacian_matrix = (double**)calloc(n, sizeof(double*));
-double** union_matrix = (double**)calloc(n, sizeof(double*));
-double** opp_d_matrix = (double**)calloc(n, sizeof(double*));
-double** result_matrix = (double**)calloc(n, sizeof(double*));
-double** temp_matrix = (double**)calloc(n, sizeof(double*));
-for (i = 0; i < n; i++){
-    for (j = 0; j < n; j++){
-        laplacian_matrix[i][j] = 0;
-        opp_d_matrix[i][j] = 0;
-        if (i == j)
-            union_matrix[i][j] = 1; 
-        else
-            union_matrix[i][j] = 0;
+void lnorm(double** vectors_matrix, int n, int vec_length){
+
+    //Laplacian_matrix initiallization
+    double** laplacian_matrix = (double**)calloc(n, sizeof(double*));
+    double** union_matrix = (double**)calloc(n, sizeof(double*));
+    double** opp_d_matrix = (double**)calloc(n, sizeof(double*));
+    double** result_matrix = (double**)calloc(n, sizeof(double*));
+    double** temp_matrix = (double**)calloc(n, sizeof(double*));
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++){
+            laplacian_matrix[i][j] = 0;
+            opp_d_matrix[i][j] = 0;
+            if (i == j)
+                union_matrix[i][j] = 1; 
+            else
+                union_matrix[i][j] = 0;
+        }
     }
+
+
+    //calculate D^(-0.5)
+    for (i = 0; i < n; i++)
+        opp_d_matrix[i][i] = 1/(pow((d_matrix[i][i]),0.5))
+
+    //calculate D^(-1/2) * W * D^(-1/2)
+    matrix_multiplication(n, vec_length, opp_d_matrix, w_matrix, result_matrix) ; //D^(-1/2) * W
+    matrix_multiplication(n, vec_length, result_matrix, opp_d_matrix, temp_matrix) ;//(D^(-1/2) * W) * D ^ (-1/2)
+
+    //calculate final L_norm
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            laplacian_matrix[i][j] = union_matrix[i][j] - temp_matrix[i][j];
+
+    for(i = 0; i < n ; i++){
+        free(laplacian_matrix[i]);
+        free(union_matrix[i]);
+        free(opp_d_matrix[i]);
+        free(result_matrix[i]);
+        free(temp_matrix[i]);
+    }
+    free(laplacian_matrix);
+    free(union_matrix);
+    free(opp_d_matrix);
+    free(result_matrix);
+    free(temp_matrix);
 }
-
-//calculate D^(-0.5)
-for (i = 0; i < n; i++)
-    opp_d_matrix[i][i] = 1/(pow((d_matrix[i][i]),0.5))
-
-//calculate D^(-1/2) * W * D^(-1/2)
-matrix_multiplication(n, vec_length, opp_d_matrix, w_matrix, result_matrix) ; //D^(-1/2) * W
-matrix_multiplication(n, vec_length, result_matrix, opp_d_matrix, temp_matrix) ;//(D^(-1/2) * W) * D ^ (-1/2)
-
-#calculate final L_norm
-for (i = 0; i < n; i++)
-    for (j = 0; j < n; j++)
-        laplacian_matrix[i][j] = union_matrix[i][j] - temp_matrix[i][j];
-
 ###########################################################################
-//case we need to use 1.3 The Eigengap Heuristic because the input k = 0
-double* eigenvalues = (int*)calloc(n, sizeof(double));
-double* deltas = (int*)calloc(n, sizeof(double));
-int k=0;
-int cnt = 0
-//insert all eigenvalues to eigenvalues array
-double max = -1;
-int argmax_i=0;
-for (i = 0; i < n; i++)
-{
+void eigengap_heuristic(double** vectors_matrix, int n, int vec_length){
+    //case we need to use 1.3 The Eigengap Heuristic because the input k = 0
+    double* eigenvalues = (int*)calloc(n, sizeof(double));
+    double* deltas = (int*)calloc(n, sizeof(double));
+    int k=0;
+    int cnt = 0
+    //insert all eigenvalues to eigenvalues array
+    double max = -1;
+    int argmax_i=0;
+    for (i = 0; i < n; i++){
         eigenvalues[i] = laplacian_matrix[i][i]
-}
+    }
 
-//bubble sort - CHANGE TO QSORT
-for (int i = 0; i < n - 1; i++)
-    for (int j = 0; j < n - i - 1; j++)
-        if (arr[j] > arr[j + 1])
-            swap(&eigenvalues[j], &eigenvalues[j + 1]);
+    qsort(eigensArray, n, sizeof(struct eigens), comparator); //to build it's coparator!!!!!
 
-//swap two values in array
-void swap(int* xp, int* yp)
-{
-    int temp = *xp;
-    *xp = *yp;
-    *yp = temp;
-}
   
-//Calculating the deltas
-for (int i = 0; i < n - 1; i++)
-    deltas[i] = abs(eigenvalues[i] - eigenvalues[i+1]);
+    //Calculating the deltas
+    for (int i = 0; i < n - 1; i++)
+        deltas[i] = abs(eigenvalues[i] - eigenvalues[i+1]);
     
-//k = argmax_i(delta_i), i = 1,...,n/2
-argmax_i = deltas[0];
-for (int i = 0; i < int(n/2); i++)
-    if (deltas[i] > argmax_i)
-        argmax_i = deltas[i];
+    //k = argmax_i(delta_i), i = 1,...,n/2
+    argmax_i = deltas[0];
+    for (int i = 0; i < int(n/2); i++)
+        if (deltas[i] > argmax_i)
+            argmax_i = deltas[i];
 
-k = argmax_i;
+    k = argmax_i;
 
+    free(eigenvalues);
+    free(deltas);
+
+    return k;
+}
 //###########################################################################
 //jacobi algorithm
-double off_a = 0;
-double off_a_tag= 0;
-double largest = 0;
-int largest_i = -1;
-int largest_j = -1;
-double theta = 0;
-double t = 0;
-double c = 0;
-double s = 0;
-int first = 0;
-int rotations_number = 0;
-double** p_matrix = (double**)calloc(n, sizeof(double*));
-double** to_copy = (double**)calloc(n, sizeof(double*));
-double** temp = (double**)calloc(n, sizeof(double*));
-double** v_matrix = (double**)calloc(n, sizeof(double*));
+void lnorm(double** vectors_matrix, int n, int vec_length){
 
-do
-{
-    for (int i = 0; i < n; i++)
-        for (int j = i + 1; j < n; j++)
-        {
-            if (abs(vectors_matrix[i][j]) > abs(largest))
+    double off_a = 0;
+    double off_a_tag= 0;
+    double largest = 0;
+    int largest_i = -1;
+    int largest_j = -1;
+    double theta = 0;
+    double t = 0;
+    double c = 0;
+    double s = 0;
+    int first = 0;
+    int rotations_number = 0;
+    double** p_matrix = (double**)calloc(n, sizeof(double*));
+    double** to_copy = (double**)calloc(n, sizeof(double*));
+    double** temp = (double**)calloc(n, sizeof(double*));
+    double** v_matrix = (double**)calloc(n, sizeof(double*));
+
+    do
+    {
+        for (int i = 0; i < n; i++)
+            for (int j = i + 1; j < n; j++)
             {
-                //3. find the Pivot A_ij
-                largest = vectors_matrix[i][j];
-                largest_i = i;
-                largest_j = j;
+                if (abs(vectors_matrix[i][j]) > abs(largest))
+                {
+                    //3. find the Pivot A_ij
+                    largest = vectors_matrix[i][j];
+                    largest_i = i;
+                    largest_j = j;
+                }
             }
-        }
 
     //4. Obtain c,t
     theta = (vectors_matrix[j][j] - vectors_matrix[i][i])/(2*vectors_matrix[i][j]);
@@ -303,7 +361,42 @@ do
         }
     }
 
-    rotations_number++;
+        rotations_number++;
     
-} while((off_a - off_a_tag) > EPSILON && rotations_number <= 100)
+    } while((off_a - off_a_tag) > EPSILON && rotations_number <= 100);
+
+    for(i = 0; i < n ; i++){
+        free(p_matrix[i]);
+        free(to_copy[i]);
+        free(temp[i]);
+        free(v_matrix[i]);
+    }
+    free(p_matrix);
+    free(union_matrix);
+    free(temp);
+    free(v_matrix);
+}
+
+//###############################################################
+
+void spk(double** vectors_matrix, int n, int vec_length, int k){
+    w_matrix = wam(vectors_matrix, n, vec_length);
+    d_matrix = ddg(w_matrix, n, vec_length);
+    l_matrix = lnorm(vectors_matrix, n, vec_length);
+
+    if(k == 0){
+        k = eigengap_heuristic(l_matrix, n, vec_length);
+    } 
+
+    //k means issues to be completed
+    funcJacobi(vectors_matrix, n, vec_length);
+        for(i = 0; i < n ; i++){
+        free(w_matrix[i]);
+        free(d_matrix[i]);
+        free(l_matrix[i]);
+    }
+    free(w_matrix);
+    free(d_matrix);
+    free(l_matrix);
+}
 
