@@ -4,6 +4,7 @@ import sys
 import spkmeansmodule as spkmm
 import importlib
 
+
 def centroidPick(vectors, k):
     centroids = []
     randomindex = np.random.randint(n)
@@ -33,6 +34,7 @@ def centroidPick(vectors, k):
         centroids.append(vectors[new_index])
         i+=1
     return centroids, indexes_used
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
