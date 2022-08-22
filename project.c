@@ -520,3 +520,4 @@ double* copy_to_eigen_Values(double* vec_matrix, int n){
     return vector;
 }
 
+}
