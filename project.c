@@ -32,7 +32,7 @@ n = get_vec_num(temp_file);
 vec_length = get_vec_length(temp_file);
 
 //initiallization of vectors matrix
-double** vectors_matrix = (double**)calloc(n, sizeof(double*));
+double** vectors_matrix = allocateMem(n, vec_length);
 
 //insert vector's items to vectors_matrix
 i = 0;
@@ -91,18 +91,18 @@ void wam(double** vectors_matrix, int n, int vec_length){
 double** wam_calc(double** vectors_matrix, int n, int vec_length){
 
     //initiallization of matrix W
-    double** w_matrix = (double**)calloc(n, sizeof(double*));
+    double** w_matrix = allocateMem(n, vec_length);
     assert(w_matrix != NULL);
 
     //calculating the values in each cell
-    int sum = 0;
-    for (i = 0; i < n; i++)
+    double sum = 0;
+    for (int i = 0; i < n; i++)
         w_matrix[i][i] = 0 //the diagonal line in matrix's values are 0
-    for (i = 0; i < n; i++){
-        for (j= i + 1; j < n; j++){
+    for (int i = 0; i < n; i++){
+        for (int j= i + 1; j < n; j++){
             sum = 0;
-            for (s = 0; s < d; s++)
-                sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2)
+            for (int s = 0; s < vec_length; s++)
+                sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2);
             w_matrix[i][j] = math.exp(pow(sum,(0.5))/-2);
             w_matrix[j][i] = math.exp(pow(sum,(0.5))/-2);
         }
@@ -124,9 +124,9 @@ void ddg(double** vectors_matrix, int n, int vec_length){
     free(d_matrix);
 }
 
-double** ddg_calc(double** vectors_matrix, int n){
+double** ddg_calc(double** vectors_matrix, int n, int vec_length){
     //initiallization
-    double** d_matrix = (double**)calloc(n, sizeof(double*));
+    double** d_matrix = allocateMem(n, vec_length);
     assert(d_matrix != NULL);
 
     for (i = 0; i < n; i++)
@@ -162,11 +162,11 @@ void lnorm(double** vectors_matrix, int n, int vec_length){
 double** lnorm_calc(double** vectors_matrix, int n, int vec_length){
 
     //Laplacian_matrix initiallization
-    double** laplacian_matrix = (double**)calloc(n, sizeof(double*));
-    double** union_matrix = (double**)calloc(n, sizeof(double*));
-    double** opp_d_matrix = (double**)calloc(n, sizeof(double*));
-    double** result_matrix = (double**)calloc(n, sizeof(double*));
-    double** temp_matrix = (double**)calloc(n, sizeof(double*));
+    double** laplacian_matrix = allocateMem(n, vec_length);
+    double** union_matrix = allocateMem(n, vec_length);
+    double** opp_d_matrix = allocateMem(n, vec_length);
+    double** result_matrix = allocateMem(n, vec_length);
+    double** temp_matrix = allocateMem(n, vec_length);
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++){
             laplacian_matrix[i][j] = 0;
@@ -280,10 +280,10 @@ struct eigens*(double** vectors_matrix, int n){
     double s = 0;
     int first = 0;
     int rotations_number = 0;
-    double** p_matrix = (double**)calloc(n, sizeof(double*));
-    double** to_copy = (double**)calloc(n, sizeof(double*));
-    double** temp = (double**)calloc(n, sizeof(double*));
-    double** v_matrix = (double**)calloc(n, sizeof(double*));
+    double** p_matrix = allocateMem(n, vec_length);
+    double** to_copy = allocateMem(n, vec_length);
+    double** temp = allocateMem(n, vec_length);
+    double** v_matrix = allocateMem(n, vec_length);
 
     do
     {
@@ -394,7 +394,7 @@ struct eigens*(double** vectors_matrix, int n){
         }
     }
 
-        rotations_number++;
+    rotations_number++;
     
     } while((off) > EPSILON && rotations_number <= 100);
 
@@ -456,7 +456,7 @@ struct eigens*(double** vectors_matrix, int n){
 
 //given a matrix this function return the transpose matrix
 double** matrix_Transpose(double** mat, int n){
-    trans_matrix = (double**) calloc(n, sizeof(double*));
+    trans_matrix = allocateMem(n, vec_length);
     assert(trans_matrix != NULL);
 
     for(i = 0; i < n; i++){
@@ -518,9 +518,9 @@ int comparator (const void* first, const void* second)
 
 //
 double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
-    t_matrix_eigen = (double**) calloc(n, sizeof(double*));
+    t_matrix_eigen = allocateMem(n, vec_length);
     assert(matTeigen != NULL);
-    u_matrix = (double**) calloc(n, sizeof(double*));
+    u_matrix = allocateMem(n, vec_length);
     assert(u_matrix != NULL);
 
     for(i = 0; i < n; i++){
@@ -612,4 +612,43 @@ int off(double** vectors_matrix[i][j], double** to_copy[i][j])
         }
     }
     return off_a - off_a_tag;
+}
+
+// function that print the given matrix.
+void print_matrix(double** matrix, int n, int d){
+    for(i = 0; i < n; i++){
+        for(j = 0; j < d; j++) {
+            if (mat[i][j] < 0 && mat[i][j] > -0.00005) {
+                printf("0.0000");
+            } else {
+                printf("%.4f", mat[i][j]);
+            }
+            if(j != d - 1){
+                printf(",");
+            }
+        }
+        printf("\n");
+    }
+}
+
+//this function allocates memory if succeeded, and if not returns
+double **allocateMem(int n, int d)
+{ 
+    int i;
+    double **matrix;
+    matrix = (double **)calloc(n, sizeof(double *));
+    if (matrix == NULL)
+        return NULL;
+
+    for (i = 0; i < n; i++)
+    {
+        matrix[i] = (double *)calloc(d, sizeof(double));
+        if (matrix[i] == NULL)
+        {
+            freeLoop(matrix, i);
+            free(matrix); 
+            return NULL;
+        }
+    }
+    return ans;
 }
