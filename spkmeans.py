@@ -51,14 +51,7 @@ def retrieve_prob(distances):
     for i in range(n):
         prob[i] = distances[i]/Sum
     return prob
-
-def retrieve_flatten_input(n,d,vectors):
-    lst = []
-    for i in range(n):
-        for j in range(d):
-                lst.append(vectors[i][j])
-    return lst
-
+    
 def retrieve_flatten_mat(mat,r,c):
     lst = []
     for i in range (r):
@@ -83,11 +76,15 @@ def print_matrix(mat, r, c):
     for i in range(r):
         result.append(",".join(mat[i]))
     for i in range(r):
-        if i!=r-1:
-            print(result[i])
+        if (i != r-1):
+            print(",".join(result[i]))
         else:
-            print(result[i])
+            print(",".join(result[i])+"\n")
 
+def print_eigens(eigens):
+    for i in range(len(eigens)):
+        eigens[i] = str(eigens[i])
+    print(",".join(eigens))
 
 # main 
 if __name__ == '__main__':
@@ -123,30 +120,31 @@ if __name__ == '__main__':
     if (k==1 and goal=="spk") or k>=n or k<0: 
         print("Invalid Input!")
         sys.exit()
-
+        
     input_to_float(input,n)
     d = len(input[0])
-    flatten_input = retrieve_flatten_input(n,d,input)
-    matT = spkmm.goalRoutingFunc(k, n, d, flatten_input, goal)
-    r = len(matT)
-    c = len(matT[0])
+    flatten_input = retrieve_flatten_mat(input,n,d)
+    final_mat = spkmm.get_matrix(k, n, d, flatten_input, goal)
+    r = len(final_mat[0])
+    c = len(final_mat[0][0])
     #printing goal matrix we got from C's goal router here
     #if goal is not spk we will print the matrix we got from goal router here
     if goal in {"wam", "ddg", "lnorm"}:
-        print_matrix(matT,r,c)
+        print_matrix(final_mat[0],r,c)
 
     if (goal == "jacobi"):
+        print_eigens(final_mat[1])
         for i in range(n):
-            if abs(matT[0][i])<0.00005:
-                matT[0][i] = 0.0000
-        print_matrix(matT,r,c)
+            if abs(final_mat[0][0][i])<0.00005:
+                final_mat[0][0][i] = 0.0000
+        print_matrix(final_mat[0],r,c)
 
     #if goal is spk we will send T (that we got from goal router) to Kmeans algorithm in C
     if goal == "spk":
-        k = len(matT[0])
-        centroids, indexes = initialize_centroids(matT, k, n) # these are the first centroids and their indexes
+        k = len(final_mat[0][0])
+        centroids, indexes = initialize_centroids(final_mat[0], k, n) # these are the first centroids and their indexes
         initial_centroids_fit_input = retrieve_flatten_mat(centroids,k,k)
-        T_fit_input = retrieve_flatten_mat(matT,n,k)
+        T_fit_input = retrieve_flatten_mat(final_mat[0],n,k)
         # getting final centroids out of  T as input points :
         final_centroids= spkmm.fit(k, n, k,initial_centroids_fit_input, T_fit_input)
         # printing the initial indexes and the final centroids (as did in HW2):
