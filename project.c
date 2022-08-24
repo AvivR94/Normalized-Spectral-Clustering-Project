@@ -515,7 +515,7 @@ int get_vec_num(FILE *f){
 }
 
 //calculate the multiplication of two matrices
-def matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result):
+void matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result):
     for (i = 0; i < rows_num; i++)
         for (j = 0; j < columns_num; j++)
             for (k = 0; k < rows_num; k++)
@@ -605,7 +605,7 @@ double **allocateMem(int n, int d)
     return ans;
 }
 
-void error_occurred(void)
+void error_occurred()
 {
     printf("An Error Has Occurred");
     exit(1);
