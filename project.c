@@ -229,8 +229,8 @@ double** lnorm_calc(double** vectors_matrix, int n, int vec_length){
 
 void eigengap_heuristic(double** vectors_matrix, int n, int vec_length){
     //case we need to use 1.3 The Eigengap Heuristic because the input k = 0
-    double* eigenvalues = (int*)calloc(n, sizeof(double));
-    double* deltas = (int*)calloc(n, sizeof(double));
+    double* eigenvalues = (double*)calloc(n, sizeof(double));
+    double* deltas = (double*)calloc(n, sizeof(double));
     int k=0;
     int cnt = 0
     //insert all eigenvalues to eigenvalues array
@@ -283,17 +283,18 @@ void jacobi_calc(double** vectors_matrix, int n, int vec_length){
 
 struct eigens* jacobi(double** vectors_matrix, int n){
 
-    double off_a = 0;
-    double off_a_tag= 0;
-    double largest = 0;
-    int lar_i = -1;
-    int lar_j = -1;
     double theta = 0;
     double t = 0;
     double c = 0;
     double s = 0;
+    int lar_arr[2] = {0,0};
+    int cs_arr[2] = {0,0};
     int first = 0;
+    int lar_i = -1;
+    int lar_j = -1;
+    double off;
     int rotations_number = 0;
+
     double** p_matrix = allocateMem(n, vec_length);
     if (p_matrix == NULL)
         error_occurred();
@@ -309,112 +310,28 @@ struct eigens* jacobi(double** vectors_matrix, int n){
 
     do
     {
-        for (int i = 0; i < n; i++)
-            for (int j = i + 1; j < n; j++)
-            {
-                if (abs(vectors_matrix[i][j]) > abs(largest))
-                {
-                    //3. find the Pivot A_ij
-                    largest = vectors_matrix[i][j];
-                    lar_i = i;
-                    lar_j = j;
-                }
-            }
+    //find latgest item and it's i,j
+    lar_arr = largest_indexes(vectors_matrix, n);
+    lar_i = lar_arr[0];
+    lar_j = lar_arr[1];
 
-    //4. Obtain c,t
-    theta = (vectors_matrix[j][j] - vectors_matrix[i][i])/(2*vectors_matrix[i][j]);
-    t = 1/(abs(theta) + pow((pow(theta, 2) + 1) , 0.5));
-    if (theta < 0)
-        t = t * -1;
-    c = 1/pow((pow(t, 2) + 1) , 0.5);
-    s = t * c;
+    //calculate c,s by theta and t
+    cs_arr = get_c_and_s(vectors_matrix, lar_i, lar_j);
+    c = cs_arr[0];
+    s = cs_arr[1];
 
-    //P construction and initiallization of to_copy array which will become A'
+    p_mat_maker(vectors_matrix, p_matrix, lar_i, lar_j);  //construct P
+    
+    set_tocopy(vectors_matrix, to_copy);  //copy vectors_matrix to to_copy which will become to A'
 
-    for (i = 0; i < n; i++){
-        for (j = 0; j < n; j++){
-            to_copy[i][j] = vectors_matrix[i][j];
-            if (i == j){
-                p_matrix[i][j] = 1;
-            }
-        }
-    }
-    p_matrix[lar_i][lar_i] = c;
-    p_matrix[lar_j][lar_j] = c;
-    if (lar_i<lar_j){
-        p_matrix[lar_i][lar_j] = s;
-        p_matrix[lar_j][lar_i] = -s;
-    }
-    else{
-        p_matrix[lar_i][lar_j] = -s;
-        p_matrix[lar_j][lar_i] = s;
-    }
+    //this function calculate the current v
+    first = v_calculation(vectors_matrix, p_matrix, v_matrix, temp, first);
+    
+    A_tag_calc(to_copy, vectors_matrix, lar_i, lar_j); //calculate A' (according to step 6)
 
-    //save P matrix
-    if (first == 0)
-    {
-        first = 1;
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
-                v_matrix[i][j] = p_matrix[i][j];
-            }
-        }
-    }
+    off = off_func(vectors_matrix, to_copy); //calc off(A) - off(A')
 
-    else //multiple multipication of privious P's with current * p_matrix 
-    {
-        matrix_multiplication(n, vec_length, v_matrix, p_matrix, temp)
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
-                v_matrix[i][j] = temp_matrix[i][j];
-            }
-        }
-    }
-
-    //calculate A' (according to step 6)
-
-    to_copy[lar_i][lar_i] = pow(c, 2) * vectors_matrix[lar_i][lar_i];
-    to_copy[lar_i][lar_i] += pow(s, 2) * vectors_matrix[lar_j][lar_j];
-    to_copy[lar_i][lar_i] += - 2*s*c*vectors_matrix[lar_i][lar_j]+pow(c, 2);
-
-    to_copy[lar_j][lar_j] = pow(s, 2) * vectors_matrix[lar_i][lar_i]
-    to_copy[lar_j][lar_j] += pow(c, 2) * vectors_matrix[lar_j][lar_j]
-    to_copy[lar_j][lar_j] +=  2*s*c*vectors_matrix[lar_i][lar_j] + pow(c, 2);
-
-    to_copy[lar_i][lar_j] = 0;
-    to_copy[lar_j][lar_i] = 0;
-
-    for (int r = 0; r < n; r++)
-        for (int m = r + 1; m < n; m++)
-        {
-            if ( r != lar_i && r != lar_j)
-            {
-                if (m == lar_i)
-                {
-                    to_copy[r][m] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
-                    to_copy[m][r] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
-                }
-                if (m == lar_j)
-                {
-                    to_copy[r][m] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
-                    to_copy[m][r] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
-                }
-            }
-            to_copy[i][j] = vectors_matrix[i][j]
-        }
-
-    int off = off(vectors_matrix, to_copy) //calc off(A) - off(A')
-
-    //copy the values of to_copy to original array( A = A')
-    for (i = 0; i < n; i++){
-        for (j = 0; j < n; j++){
-            vectors_matrix[i][j] = to_copy[i][j];
-        }
-    }
+    A_to_A_tag(vectors_matrix, to_copy); //copy the values of to_copy to original array( A = A')
 
     rotations_number++;
     
@@ -446,32 +363,6 @@ struct eigens* jacobi(double** vectors_matrix, int n){
     free(temp);
     free(v_matrix);
 
-    for(j_iter = 0; j_iter < n; j_iter++){
-        if(eigensArray[j_iter].value < 0 && eigensArray[j_iter].value > -0.00005){
-            printf("0.0000");
-        } 
-        else
-            printf("%.4f", eigensArray[j_iter].value);
-
-        if(j_iter != n - 1){
-            printf(",");
-        }
-    }
-    printf("\n");
-
-    for(j_iter = 0; j_iter < n; j_iter++){
-        for(i = 0; i < n; i++){
-            if(eigensArray[j_iter].vector[i] < 0 && eigensArray[j_iter].vector[i] > -0.00005)
-                printf("0.0000");
-            else
-                printf("%.4f", eigensArray[j_iter].vector[i]);
-            
-            if(i != n - 1)
-                printf(",");
-        }
-        printf("\n");
-    }
-    
     qsort(eigensArray, n, sizeof(struct eigens), comparator);
     return eigensArray;
 }
@@ -632,8 +523,10 @@ def matrix_multiplication(int rows_num, int columns_num, double** mat1, double**
 
 
 //the function calculate off(A)^2 and off(A')^2 and return off_a - off_a_tag
-int off(double** vectors_matrix[i][j], double** to_copy[i][j])
+double off_func(double** vectors_matrix[i][j], double** to_copy[i][j])
 {
+    double off_a = 0;
+    double off_a_tag = 0;
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++){
             off_a += pow(vectors_matrix[i][j], 2); 
@@ -718,3 +611,153 @@ void error_occurred(void)
     exit(1);
 }
 
+int** largest_indexes(double** vectors_matrix, int n)
+{
+int eigenvalues[2] = {0, 0};
+double largest = 0;
+int lar_i = -1;
+int lar_j = -1;
+for (int i = 0; i < n; i++)
+{
+    for (int j = i + 1; j < n; j++)
+    {
+        if (abs(vectors_matrix[i][j]) > abs(largest))
+        {
+            //3. find the Pivot A_ij
+            largest = vectors_matrix[i][j];
+            lar_i = i;
+            lar_j = j;
+        }
+    }
+}
+eigenvalues[0] = lar_i;
+eigenvalues[1] = lar_j;
+return eigenvalues;
+}
+
+//this function is for obtain c and s
+double* get_c_and_s(double** vectors_matrix, int lar_i, int lar_j)
+{
+double cs_arr[2] = {0,0}; 
+
+theta = (vectors_matrix[lar_j][lar_j] - vectors_matrix[lar_i][lar_i])/(2*vectors_matrix[lar_i][lar_j]);
+t = 1/(abs(theta) + pow((pow(theta, 2) + 1) , 0.5));
+if (theta < 0)
+    t = t * -1;
+c = 1/pow((pow(t, 2) + 1) , 0.5);
+s = t * c;
+
+cs_arr[0] = c;
+cs_arr[1] = s;
+return cs_arr;
+}
+
+//this function construct P and initialize
+void p_mat_maker(double** vectors_matrix, double** p_matrix, int lar_i, int lar_j)
+{
+for (i = 0; i < n; i++){
+    for (j = 0; j < n; j++){
+        if (i == j){
+            p_matrix[i][j] = 1;
+        }
+    }
+}
+
+p_matrix[lar_i][lar_i] = c;
+p_matrix[lar_j][lar_j] = c;
+
+if (lar_i<lar_j){
+    p_matrix[lar_i][lar_j] = s;
+    p_matrix[lar_j][lar_i] = -s;
+    }
+
+else{
+    p_matrix[lar_i][lar_j] = -s;
+    p_matrix[lar_j][lar_i] = s;
+    }
+}
+
+//this function copy vectors_matrix to to_copy which will become to A'
+void set_tocopy(double** vectors_matrix, double** to_copy)
+{
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++){
+            to_copy[i][j] = vectors_matrix[i][j];
+        }
+    }
+}
+
+int first_p_to_v(double** vectors_matrix, double** p_matrix, double** v_matrix,double** temp, int first)
+{
+    if (first == 0)
+    {
+        first = 1;
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+                v_matrix[i][j] = p_matrix[i][j];
+            }
+        }
+    }
+    else //multiple multipication of privious P's with current * p_matrix 
+    {
+        matrix_multiplication(n, vec_length, v_matrix, p_matrix, temp)
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+                v_matrix[i][j] = temp_matrix[i][j];
+            }
+        }
+    }
+    return first;
+}
+
+//this function calculate A' (according to step 6)
+void A_tag_calc(double** to_copy,double** vectors_matrix, int lar_i, int lar_j)
+{
+    //calculate cell i,i
+    to_copy[lar_i][lar_i] = pow(c, 2) * vectors_matrix[lar_i][lar_i];
+    to_copy[lar_i][lar_i] += pow(s, 2) * vectors_matrix[lar_j][lar_j];
+    to_copy[lar_i][lar_i] += - 2*s*c*vectors_matrix[lar_i][lar_j]+pow(c, 2);
+
+    //calculate cell j,j
+    to_copy[lar_j][lar_j] = pow(s, 2) * vectors_matrix[lar_i][lar_i]
+    to_copy[lar_j][lar_j] += pow(c, 2) * vectors_matrix[lar_j][lar_j]
+    to_copy[lar_j][lar_j] +=  2*s*c*vectors_matrix[lar_i][lar_j] + pow(c, 2);
+
+    //set cells i,j and j,i
+    to_copy[lar_i][lar_j] = 0;
+    to_copy[lar_j][lar_i] = 0;
+
+    for (int r = 0; r < n; r++)
+        for (int m = r + 1; m < n; m++)
+        {
+            if ( r != lar_i && r != lar_j)
+            {
+                if (m == lar_i)
+                {
+                    to_copy[r][m] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
+                    to_copy[m][r] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
+                }
+                if (m == lar_j)
+                {
+                    to_copy[r][m] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
+                    to_copy[m][r] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
+                }
+            }
+            to_copy[i][j] = vectors_matrix[i][j]
+        }
+
+}
+
+//this function copy the values of to_copy to original array( A = A')
+void A_to_A_tag(double** vectors_matrix,double** to_copy);
+{
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++){
+            vectors_matrix[i][j] = to_copy[i][j];
+        }
+    }
+}
