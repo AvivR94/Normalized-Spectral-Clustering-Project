@@ -83,7 +83,7 @@ static PyObject* get_matrix(PyObject *self, PyObject *args){
     }
 
     else if (strcmp(goal, "jacobi") == 0){
-        eigens = jacobi(original_matrix, n, vector_length);
+        eigens = jacobi_calc(original_matrix, n, vector_length);
         matrix = jacobi_mat_for_print(eigens,n,vector_length);
         PyList_Append(final_ret, make_list_from_matrix(matrix, n,vector_length));
         eigens_arr = (double *)calloc(n, sizeof(double));
@@ -103,7 +103,7 @@ static PyObject* get_matrix(PyObject *self, PyObject *args){
         w_matrix = wam_calc(original_matrix, n, vec_length);
         d_matrix = ddg_calc(w_matrix, n, vec_length);
         l_matrix = lnorm_calc(d_matrix, n, vec_length);
-        eigens_arr = jacobi(l_matrix, n, vec_length);
+        eigens_arr = jacobi_calc(l_matrix, n, vec_length);
         if(k == 0){
             k = eigengap_heuristic(l_matrix, n, vec_length);
         } 
@@ -219,151 +219,7 @@ static PyObject* fit(PyObject *self, PyObject *args){
     return Py_BuildValue("O", pyCentArr);
 }
 
-/**** KMEANS ****/
-double *getFinalCentroids(double *centroids, double *elements, int k, int d, int n, int max_iter, double epsilone)
-{
-    int bit=1;
-    int i;
-    int iteration_number=0;
-    int min_index = 0;
-    int flag = 0;
-    double sum = 0.0;
-    double min = 0.0;
-    int* elements_location;
-    int* items_number_clusters;
-    double** old_centroids;
 
-    elements_location = (int*)calloc(n, sizeof(int));
-    if (!elements_location)
-        error_occurred();
-
-    items_number_clusters = (int*)calloc(k, sizeof(int));
-    if (!items_number_clusters)
-        error_occurred();
-
-    old_centeroids = (double**)calloc(k, sizeof(double*));
-    if (!old_centeroids)
-        error_occurred();
-
-    for (i=0;i<k;i++){
-        old_centeroids[i]=(double*) calloc(d,sizeof(double));
-            if (!old_centeroids[i])
-                error_occurred();
-    }
-
-    while (bit==1 && max_iter>iteration_number)
-    {
-        iteration_number++;
-        initClusters(elements_location, items_number_clusters, n, k);
-        assignCentroids(elements, centroids, items_number_clusters,elements_location,k,d,n);
-        saveCentroids(old_centroids, centroids, k, d);
-        resetCentroids(centroids, k, d);
-        updateCentroids(centroids,elements,items_number_clusters,elements_location,d,n,k);
-        bit = Convergence(old_centroids, centroids, k, d, epsilone)
-    }
-
-    free(elements_location);
-    free(items_number_clusters);
-    for(i=0; i<k; i++)
-        free(old_centeroids[i]);
-    free(old_centroids);
-
-    return centroids;
-}
-
-/*HELPING FUNCTIONS IN K MEANS*/
-
-void resetCentroids(double* centroids,int k, int d){
-    int i;
-    int j;
-    for (i=0;i<k;i++)
-        for(j=0;j<d;j++)
-            centroids[i][j]=0.0;                
-}
-
-void initClusters(int* elements_loc, int* items_number_clusters, int n, int k){
-    int i;
-    for (i=0;i<n;i++)
-        elements_loc[i]=0;
-    for (i=0;i<k;i++)
-        items_number_clusters[i]=0;
-}
-
-void saveCentroids(double* old_centroids, double* centroids, int k, int d){
-    int i;
-    int j;
-    for (i=0;i<k;i++){
-            for (j=0;j<d;j++)
-                old_centeroids[i][j] = centeroids[i][j];
-        }
-}
-
-
-void assignCentroids(double *ele,double *cntrds,int* in_clstrs,int* ele_loc,int k,int d,int n)
-{
-    int i;
-    int j;
-    int l;
-    double sum=0.0;
-    int flag;
-    int min_index;
-    for (i=0; i < n; i++){
-        min_index = 0;
-        flag = 0;
-        for (j=0; j < k; j++){
-            sum = 0.0;
-                for (l = 0; l < d; l++)
-                    sum += pow((elements[i][l] - centeroids[j][l]),2);
-            sum = pow(sum,0.5);
-            if (flag == 0){
-                min = sum;
-                flag = 1;
-            }
-            else if (sum < min){
-                min = sum;
-                min_index = j;
-            }
-        }
-        in_clstrs[min_index]+=1;
-        ele_loc[i]=min_index;
-    }
-}
-
-void updateCentroids(double* cntrds,double* ele,int* in_clstrs,int *ele_loc,int d,int n,int k)
-{
-    int m;
-    int i;
-    int q;
-    for (i=0;i<k;i++){
-            for (m=0;m<n;m++){
-                if (ele_loc[m]==i){
-                    for (q=0;q<d;q++)
-                        cntrds[i][q]+=ele[m][q];
-                }
-            }
-            for (q=0;q<d;q++){
-                if (cntrds[i][q]==0){
-                    continue;
-                }
-                cntrds[i][q]=cntrds[i][q]/(double)in_clstrs[i];
-            }
-        }
-}
-
-int Convergence(double* old_centroids,double* centroids,int k,int d,int eps){
-    int bit = 0;
-    int i;
-    double sum;
-    for(i=0; i<k; i++){
-        sum = 0.0;
-        for (j = 0; j<d; j++)
-            sum += pow((old_centeroids[i][j] + centeroids[i][j]), 2);
-        sum = pow(sum, 0.5);
-        if (sum >= eps)
-            bit = 1;
-    }
-    return bit;
-}
 
  //Python C-API functions
 
