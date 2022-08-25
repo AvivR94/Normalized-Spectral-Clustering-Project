@@ -456,7 +456,6 @@ double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
     for(i=0; i<n; i++){
         free(u_matrix[i]);
     }
-
     free(u_matrix);
 
     return t_matrix_eigen;
@@ -554,19 +553,17 @@ void print_jacobi(struct eigens* eigensArray, int n, int vector_length){
     int i, j;
     double** jacobi_matrix;
 
-    for (i = 0; i < n; i++)
-        printf("%.4f ", eigensArray[i].value);
-    
-    jacobi_matrix = jacobi_mat_for_print(eigensArray, n, vector_length);
-
-    for(i = 0; i < n; i++)
-        for(j = 0; j < vector_length; j++)
-        {
-            printf("%.4f", jacobi_matrix[i][j]);
-            if(j != vector_length - 1){
+    for (i = 0; i < n; i++){
+        printf("%.4f", eigensArray[i].value);
+        if(i != vector_length - 1)
                 printf(",");
-        }
-        printf("\n");
+    }
+    printf("\n");
+    jacobi_matrix = jacobi_mat_for_print(eigensArray, n, vector_length);
+    print_matrix(jacobi_matrix, n, vector_length);
+    for(i=0; i < vec_length; i++)
+        free(jacobi_matrix[i]);
+    free(jacobi_matrix);
 }
 
 // function that print the given matrix.
@@ -628,12 +625,9 @@ int* largest_indexes(double** vectors_matrix, int n)
     lar_i = -1;
     lar_j = -1;
 
-    for (i = 0; i < n; i++)
-    {
-        for (j = i + 1; j < n; j++)
-        {
-            if (abs(vectors_matrix[i][j]) > abs(largest))
-            {
+    for (i = 0; i < n; i++){
+        for (j = i + 1; j < n; j++){
+            if (abs(vectors_matrix[i][j]) > abs(largest)){
                 //3. find the Pivot A_ij
                 largest = vectors_matrix[i][j];
                 lar_i = i;
@@ -671,8 +665,7 @@ void p_mat_maker(double** vectors_matrix, double** p_matrix, int lar_i, int lar_
 {
     int i, j;
 
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++){
         for (j = 0; j < n; j++){
             if (i == j){
                 p_matrix[i][j] = 1;
@@ -761,24 +754,21 @@ void A_tag_calc(double** to_copy,double** vectors_matrix, int lar_i, int lar_j,i
     to_copy[lar_i][lar_j] = 0;
     to_copy[lar_j][lar_i] = 0;
 
-    for (r = 0; r < n; r++)
-        for (m = r + 1; m < n; m++)
-        {
-            if ( r != lar_i && r != lar_j)
-            {
-                if (m == lar_i)
-                {
+    for (r = 0; r < n; r++){
+        for (m = r + 1; m < n; m++){
+            if ( r != lar_i && r != lar_j){
+                if (m == lar_i){
                     to_copy[r][m] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
                     to_copy[m][r] = c * vectors_matrix[r][lar_i] - s * vectors_matrix[r][lar_j];
                 }
-                if (m == lar_j)
-                {
+                if (m == lar_j){
                     to_copy[r][m] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
                     to_copy[m][r] = c * vectors_matrix[r][lar_j] - s * vectors_matrix[r][lar_i];
                 }
             }
             to_copy[r][m] = vectors_matrix[r][m];
         }
+    }
 
 }
 
@@ -788,9 +778,8 @@ void A_to_A_tag(double** vectors_matrix,double** to_copy, int n)
     int i, j;
 
     for (i = 0; i < n; i++){
-        for (j = 0; j < n; j++){
+        for (j = 0; j < n; j++)
             vectors_matrix[i][j] = to_copy[i][j];
-        }
     }
 }
 
