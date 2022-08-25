@@ -9,17 +9,17 @@ typedef struct eigens{
     int index;
     double value;
     double* vector;
-}eigens;
+} eigens;
 
 int main(int argc, char* argv[]){
-    if (argc != 4){
+    if (argc != 3){
         printf ("Invalid Input");
         return 0;
     }
 
-    int k = atoi(argv[1]);
-    char* goal = argv[2]; //the enum type
-    char* input_filename = argv[3]; //the input
+    //int k = atoi(argv[1]);
+    char* goal = argv[1]; //the enum type
+    char* input_filename = argv[2]; //the input
 
     FILE *temp_file = fopen(input_filename, "r");
     if (temp_file == NULL){
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
 
     //this function counts the num of items in vectors, vec_length
     int n = get_vec_num(temp_file);
-    int vec_length = get_vec_length(temp_file);
+    int vec_length = get_vec_length(temp_file); // merge to 1 func
 
     //initiallization of vectors matrix
     double** vectors_matrix = allocateMem(n, vec_length);
@@ -53,10 +53,7 @@ int main(int argc, char* argv[]){
     }
 
     //check which goal to choose
-        if (strcmp(goal, "spk") == 0){
-            spk(vectors_matrix, n, vec_length, argv[3]);  
-        }  
-        else if(strcmp(goal, "wam") == 0){
+        if(strcmp(goal, "wam") == 0){
             wam(vectors_matrix, n, vec_length);
         }
         else if (strcmp(goal, "ddg") == 0){
@@ -381,32 +378,6 @@ double** matrix_Transpose(double** mat, int n, int vec_length){
         }
     }
     return trans_matrix;
-}
-
-void spk(double** vectors_matrix, int n, int vec_length, int k){
-    //to build cover functions to each goal
-    double** w_matrix = wam_calc(vectors_matrix, n, vec_length);
-    double** d_matrix = ddg_calc(w_matrix, n, vec_length);
-    double** l_matrix = lnorm_calc(d_matrix, n, vec_length);
-    eigens* eigens_arr = jacobi_calc(l_matrix, n, vec_length);
-
-    if(k == 0){
-        k = eigengap_heuristic(l_matrix, n, vec_length);
-    } 
-
-    double** t_eigen_mat = build_matrix_t_eigen(eigens_arr, n, k, vec_length);
-    kmeans(t_eigen_mat,n, kCluster); /// aviv connect it pls
-
-    for(i = 0; i < n ; i++){
-        free(w_matrix[i]);
-        free(d_matrix[i]);
-        free(l_matrix[i]);
-        free(eigens_arr[i]);
-    }
-    free(w_matrix);
-    free(d_matrix);
-    free(l_matrix);
-    free(eigens_arr);
 }
 
 
@@ -809,7 +780,7 @@ double *getFinalCentroids(double *centroids, double *elements, int k, int d, int
         saveCentroids(old_centroids, centroids, k, d);
         resetCentroids(centroids, k, d);
         updateCentroids(centroids,elements,items_number_clusters,elements_location,d,n,k);
-        bit = Convergence(old_centroids, centroids, k, d, epsilone)
+        bit = Convergence(old_centroids, centroids, k, d, epsilone);
     }
 
     free(elements_location);
