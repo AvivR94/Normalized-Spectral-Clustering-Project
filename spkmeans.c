@@ -29,26 +29,26 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    // int k = atoi(argv[1]);
-    goal = argv[1]; // the enum type
-    input_filename = argv[2]; //the input
+    /* int k = atoi(argv[1]); */
+    goal = argv[1]; /* the enum type */
+    input_filename = argv[2]; /* the input */
 
     temp_file = fopen(input_filename, "r");
     if (temp_file == NULL)
         error_occurred();
 
-    //this function counts the num of items in vectors, vec_length and number of vector
+    /* this function counts the num of items in vectors, vec_length and number of vector */
     ret_arr = get_vec_num_and_length(temp_file);
     n = ret_arr[0];
     vec_length = ret_arr[1];
 
-    //initiallization of vectors matrix
+    /* initiallization of vectors matrix */
     vectors_matrix = allocateMem(n, vec_length);
     if (vectors_matrix == NULL)
         error_occurred();
 
 
-    //insert vector's items to vectors_matrix
+    /* insert vector's items to vectors_matrix */
     i=0;
     j=0;
     while(fscanf(temp_file, "%lf%c",&vector_item,&comma) == 2){
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]){
         }
     }
 
-    //check which goal to choose
+    /* check which goal to choose */
         if(strcmp(goal, "wam") == 0){
             wam(vectors_matrix, n, vec_length);
         }
@@ -106,9 +106,9 @@ double** wam_calc(double** vectors_matrix, int n, int vec_length){
     if (w_matrix == NULL)
         error_occurred();  
 
-    //calculating the values in each cell
+    /* calculating the values in each cell */
     for (i = 0; i < n; i++)
-        w_matrix[i][i] = 0; //the diagonal line in matrix's values are 0
+        w_matrix[i][i] = 0; /* the diagonal line in matrix's values are 0 */
     for (i = 0; i < n; i++){
         for (j= i + 1; j < n; j++){
             sum = 0;
@@ -150,7 +150,7 @@ double** ddg_calc(double** w_matrix, int n, int vec_length){
         for (j = 0; j < n; j++)
             d_matrix[i][j] = 0;
 
-    //calculate the sum of each row and place in the diagonal line of d_matrix
+    /* calculate the sum of each row and place in the diagonal line of d_matrix */
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++)
             d_matrix[i][i] += w_matrix[i][j];
@@ -189,7 +189,7 @@ double** lnorm_calc(double** w_matrix, double** d_matrix, int n, int vec_length)
     double** result_matrix;
     double** temp_matrix;
 
-    //Laplacian_matrix initiallization
+    /* Laplacian_matrix initiallization */
     laplacian_matrix = allocateMem(n, n);
     if (laplacian_matrix == NULL)
         error_occurred();
@@ -218,18 +218,18 @@ double** lnorm_calc(double** w_matrix, double** d_matrix, int n, int vec_length)
     }
 
 
-    //calculate D^(-0.5)
+    /* calculate D^(-0.5) */
     for (i = 0; i < n; i++)
         opp_d_matrix[i][i] = 1/(pow((d_matrix[i][i]),0.5));
 
-    //calculate D^(-1/2) * W * D^(-1/2)
+    /*calculate D^(-1/2) * W * D^(-1/2)*/
     
-    //D^(-1/2) * W
+    /* D^(-1/2) * W */
     matrix_multiplication(n,vec_length,opp_d_matrix,w_matrix,result_matrix);
-    //(D^(-1/2) * W) * D ^ (-1/2)
+    /*(D^(-1/2) * W) * D ^ (-1/2) */
     matrix_multiplication(n,vec_length,result_matrix,opp_d_matrix,temp_matrix);
 
-    //calculate final L_norm
+    /*calculate final L_norm */
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
             laplacian_matrix[i][j] = union_matrix[i][j] - temp_matrix[i][j];
@@ -253,13 +253,13 @@ int eigengap_heuristic(struct eigens* eigens_arr, int n, int vec_length){
     double* deltas;
     double max;
     int k, i, argmax_i;
-    //case we need to use 1.3 The Eigengap Heuristic because the input k = 0
+    /*case we need to use 1.3 The Eigengap Heuristic because the input k = 0 */
     deltas = (double*)calloc(n-1, sizeof(double));
-    //Calculating the deltas
+    /*Calculating the deltas */
     for (i = 0; i < n - 1; i++)
         deltas[i] = abs(eigens_arr[i].value - eigens_arr[i+1].value);
     
-    //k = argmax_i(delta_i), i = 1,...,n/2
+    /*k = argmax_i(delta_i), i = 1,...,n/2 */
     argmax_i = deltas[0];
     for (i = 0; i < (int)(n/2); i++)
         if (deltas[i] > argmax_i)
@@ -320,28 +320,28 @@ struct eigens* jacobi_calc(double** vectors_matrix, int n, int vec_length){
         error_occurred();
     
     do{
-    //find latgest item and it's i,j
+    /* find latgest item and it's i,j */
     lar_arr = largest_indexes(vectors_matrix, n);
     lar_i = lar_arr[0];
     lar_j = lar_arr[1];
 
-    //calculate c,s by theta and t
+    /* calculate c,s by theta and t */
     cs_arr = get_c_and_s(vectors_matrix, lar_i, lar_j);
     c = cs_arr[0];
     s = cs_arr[1];
 
-    p_mat_maker(vectors_matrix, p_matrix, lar_i, lar_j, n, c, s);  //construct P
+    p_mat_maker(vectors_matrix, p_matrix, lar_i, lar_j, n, c, s);  /* construct P */
     
-    set_tocopy(vectors_matrix, to_copy);  //copy vectors_matrix to to_copy which will become to A'
+    set_tocopy(vectors_matrix, to_copy);  /* copy vectors_matrix to to_copy which will become to A' */
 
-    //this function calculate the current v
+    /* this function calculate the current v */
     first = v_calculation(p_matrix, v_matrix, first, n);
     
-    A_tag_calc(to_copy, vectors_matrix, lar_i,n,  lar_j, c, s); //calculate A' (according to step 6)
+    A_tag_calc(to_copy, vectors_matrix, lar_i,n,  lar_j, c, s); /* calculate A' (according to step 6) */
 
-    off = off_func(vectors_matrix, to_copy); //calc off(A) - off(A')
+    off = off_func(vectors_matrix, to_copy); /* calc off(A) - off(A') */
 
-    A_to_A_tag(vectors_matrix, to_copy, n); //copy the values of to_copy to original matrix( A = A')
+    A_to_A_tag(vectors_matrix, to_copy, n); /* copy the values of to_copy to original matrix( A = A') */
 
     rotations_number++;
     
@@ -373,7 +373,7 @@ struct eigens* jacobi_calc(double** vectors_matrix, int n, int vec_length){
     return eigensArray;
 }
 
-//given a matrix this function return the transpose matrix
+/* given a matrix this function return the transpose matrix */
 double** matrix_Transpose(double** mat, int n, int vec_length){
     int i, j;
     double** trans_matrix;
@@ -398,7 +398,7 @@ double** matrix_Transpose(double** mat, int n, int vec_length){
 }
 
 
- //comparator func in order to sort a list of eigen structs
+ /* comparator func in order to sort a list of eigen structs */
 
 int comparator(const void* first, const void* second)
 {
@@ -418,7 +418,7 @@ int comparator(const void* first, const void* second)
 }
 
 
-//for spk in cmodule
+/* for spk in cmodule */
 double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
     int i;
     int j;
@@ -462,7 +462,7 @@ double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
     return t_matrix_eigen;
 }
 
- //copy vector into eigen struct.
+ /* copy vector into eigen struct. */
  
 double* copy_to_eigen_Values(double* vec_matrix, int n){
     int j;
@@ -477,7 +477,7 @@ double* copy_to_eigen_Values(double* vec_matrix, int n){
     return vector;
 }
 
-//this function counts what is the length of vectors number of vectors n
+/* this function counts what is the length of vectors number of vectors n */
 int get_vec_num_and_length(FILE *temp_file){
     int n, vec_length, first;
     double vector_item;
@@ -502,7 +502,7 @@ int get_vec_num_and_length(FILE *temp_file){
 }
 
 
-//calculate the multiplication of two matrices
+/* calculate the multiplication of two matrices */
 void matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result)
 {
     int i, j, k;
@@ -513,7 +513,7 @@ void matrix_multiplication(int rows_num, int columns_num, double** mat1, double*
                 result[i][j] += mat1[i][k] * mat2[k][j];
 }
 
-//the function calculate off(A)^2 and off(A')^2 and return off_a - off_a_tag
+/* the function calculate off(A)^2 and off(A')^2 and return off_a - off_a_tag */
 double off_func(double** vectors_matrix, double** to_copy)
 {
     double off_a, off_a_tag;
@@ -567,7 +567,7 @@ void print_jacobi(struct eigens* eigensArray, int n, int vector_length){
     free(jacobi_matrix);
 }
 
-// function that print the given matrix.
+/* function that print the given matrix. */
 void print_matrix(double** matrix, int n, int vector_length){
     int i, j;
     
@@ -586,7 +586,7 @@ void print_matrix(double** matrix, int n, int vector_length){
     }
 }
 
-//this function allocates memory if succeeded, and if not returns
+/* this function allocates memory if succeeded, and if not returns */
 double** allocateMem(int n, int vector_length)
 { 
     int i;
@@ -641,7 +641,7 @@ int* largest_indexes(double** vectors_matrix, int n)
     return eigenvalues;
 }
 
-//this function is for obtain c and s
+/* this function is for obtain c and s */
 double* get_c_and_s(double** vectors_matrix, int lar_i, int lar_j)
 {
     double theta, t, c, s;
@@ -661,7 +661,7 @@ double* get_c_and_s(double** vectors_matrix, int lar_i, int lar_j)
     return cs_arr;
 }
 
-//this function construct P and initialize
+/* this function construct P and initialize */
 void p_mat_maker(double** vectors_matrix, double** p_matrix, int lar_i, int lar_j, int n, double c, double s)
 {
     int i, j;
@@ -687,7 +687,7 @@ void p_mat_maker(double** vectors_matrix, double** p_matrix, int lar_i, int lar_
         }
 }
 
-//this function copy vectors_matrix to to_copy which will become to A'
+/* this function copy vectors_matrix to to_copy which will become to A' */
 void set_tocopy(double** vectors_matrix, double** to_copy)
 {
     int i, j;
@@ -718,7 +718,7 @@ int v_calculation(double** p_matrix, double** v_matrix, int first,int vec_length
             }
         }
     }
-    else //multiple multipication of privious P's with current * p_matrix 
+    else /* multiple multipication of privious P's with current * p_matrix */
     {
         matrix_multiplication(n, vec_length, v_matrix, p_matrix, temp_matrix);
         for (i = 0; i < n; i++)
@@ -736,22 +736,22 @@ int v_calculation(double** p_matrix, double** v_matrix, int first,int vec_length
     return first;
 }
 
-//this function calculate A' (according to step 6)
+/* this function calculate A' (according to step 6) */
 void A_tag_calc(double** to_copy,double** vectors_matrix, int lar_i, int lar_j,int n, double c, double s)
 {
     int r, m;
 
-    //calculate cell i,i
+    /* calculate cell i,i */
     to_copy[lar_i][lar_i] = pow(c, 2) * vectors_matrix[lar_i][lar_i];
     to_copy[lar_i][lar_i] += pow(s, 2) * vectors_matrix[lar_j][lar_j];
     to_copy[lar_i][lar_i] += - 2*s*c*vectors_matrix[lar_i][lar_j]+pow(c, 2);
 
-    //calculate cell j,j
+    /* calculate cell j,j */
     to_copy[lar_j][lar_j] = pow(s, 2) * vectors_matrix[lar_i][lar_i];
     to_copy[lar_j][lar_j] += pow(c, 2) * vectors_matrix[lar_j][lar_j];
     to_copy[lar_j][lar_j] +=  2*s*c*vectors_matrix[lar_i][lar_j] + pow(c, 2);
 
-    //set cells i,j and j,i
+    /*set cells i,j and j,i */
     to_copy[lar_i][lar_j] = 0;
     to_copy[lar_j][lar_i] = 0;
 
@@ -773,7 +773,7 @@ void A_tag_calc(double** to_copy,double** vectors_matrix, int lar_i, int lar_j,i
 
 }
 
-//this function copy the values of to_copy to original array( A = A')
+/* this function copy the values of to_copy to original array( A = A') */
 void A_to_A_tag(double** vectors_matrix,double** to_copy, int n)
 {
     int i, j;
@@ -784,7 +784,7 @@ void A_to_A_tag(double** vectors_matrix,double** to_copy, int n)
     }
 }
 
-//K-means Functions
+/* K-means Functions */
 double *getFinalCentroids(double *centroids, double *elements, int k, int d, int n, int max_iter, double epsilone)
 {
     int bit;

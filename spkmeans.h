@@ -3,16 +3,6 @@
 #include <math.h>
 #include <stdio.h>
 
-typedef struct eigens{
-    int index;
-    double value;
-    double* vector;
-}eigens;
-
-
-
-FILE  *f;
-struct eigens *eigensArray;
 
 void wam(double** vectors_matrix, int n, int vec_length);
 double** wam_calc(double** vectors_matrix, int n, int vec_length);
@@ -30,7 +20,7 @@ double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k);
 double* copy_to_eigen_Values(double* vec_matrix, int n);
 int get_vec_num_and_length(FILE *temp_file);
 void matrix_multiplication(int rows_num, int columns_num, double** mat1, double** mat2, double** result);
-double off_func(double** vectors_matrix[i][j], double** to_copy[i][j]);
+double off_func(double** vectors_matrix, double** to_copy);
 double** jacobi_mat_for_print(struct eigens* eigensArray, int n, int vector_length);
 void print_jacobi(struct eigens* eigensArray, int n, int vector_length);
 void print_matrix(double** matrix, int n, int vector_length);
