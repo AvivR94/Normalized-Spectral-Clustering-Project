@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include "spkmeans.h"
 #define EPSILON 0.00001
 
 typedef struct eigens{
@@ -28,8 +29,8 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    //int k = atoi(argv[1]);
-    goal = argv[1]; //the enum type
+    // int k = atoi(argv[1]);
+    goal = argv[1]; // the enum type
     input_filename = argv[2]; //the input
 
     temp_file = fopen(input_filename, "r");
@@ -61,18 +62,18 @@ int main(int argc, char* argv[]){
     }
 
     //check which goal to choose
-        if(strcmp(goal, "wam") == 0)
+        if(strcmp(goal, "wam") == 0){
             wam(vectors_matrix, n, vec_length);
-
-        else if (strcmp(goal, "ddg") == 0)
+        }
+        else if (strcmp(goal, "ddg") == 0){
             ddg(vectors_matrix, n, vec_length);
-
-        else if (strcmp(goal, "lnorm") == 0)
+        }
+        else if (strcmp(goal, "lnorm") == 0){
             lnorm(vectors_matrix, n, vec_length);
-
-        else if (strcmp(goal, "jacobi") == 0)
+        }
+        else if (strcmp(goal, "jacobi") == 0){
             jacobi(vectors_matrix, n, vec_length);
-    
+        }
     for(i=0; i<n; i++)
         free(vectors_matrix[i]);
     free(vectors_matrix);
