@@ -12,36 +12,42 @@ typedef struct eigens{
 } eigens;
 
 int main(int argc, char* argv[]){
+    int n;
+    int i;
+    int j;
+    int vec_length;
+    char* goal;
+    char* input_filename;
+    double** vectors_matrix;
+    FILE* temp_file;
+    double vector_item;
+    char comma;
     if (argc != 3){
-        printf ("Invalid Input");
-        return 0;
+        printf ("Invalid Input!");
+        exit(1);
     }
 
     //int k = atoi(argv[1]);
-    char* goal = argv[1]; //the enum type
-    char* input_filename = argv[2]; //the input
+    goal = argv[1]; //the enum type
+    input_filename = argv[2]; //the input
 
-    FILE *temp_file = fopen(input_filename, "r");
-    if (temp_file == NULL){
-        printf("An Error Has Occurred");
-        return 0;
-    }
+    temp_file = fopen(input_filename, "r");
+    if (temp_file == NULL)
+        error_occurred();
 
     //this function counts the num of items in vectors, vec_length
-    int n = get_vec_num(temp_file);
-    int vec_length = get_vec_length(temp_file); // merge to 1 func
+    n = get_vec_num(temp_file);
+    vec_length = get_vec_length(temp_file); // merge to 1 func
 
     //initiallization of vectors matrix
-    double** vectors_matrix = allocateMem(n, vec_length);
+    vectors_matrix = allocateMem(n, vec_length);
     if (vectors_matrix == NULL)
         error_occurred();
 
 
     //insert vector's items to vectors_matrix
-    int i = 0;
-    int j = 0;
-    double vector_item;
-    char comma;
+    i=0;
+    j=0;
     while(fscanf(temp_file, "%lf%c",&vector_item,&comma) == 2){
         vectors_matrix[i][j] = vector_item;
         j++;
@@ -79,10 +85,11 @@ int main(int argc, char* argv[]){
 
 void wam(double** vectors_matrix, int n, int vec_length){
 {
+    int i;
     w_matrix = wam_calc(vectors_matrix, n, vec_length);
     print_matrix(w_matrix, n, n);
 
-    for(int i = 0; i < n; i++){
+    for(i = 0; i < n; i++){
         free(w_matrix[i]);
     }
     free(w_matrix);
@@ -90,20 +97,22 @@ void wam(double** vectors_matrix, int n, int vec_length){
 
 
 double** wam_calc(double** vectors_matrix, int n, int vec_length){
-
+    int i;
+    int j;
+    int s;
     //initiallization of matrix W
-    double** w_matrix = allocateMem(n, vec_length);
+    double** w_matrix = allocateMem(n, n);
     if (w_matrix == NULL)
         error_occurred();  
 
     //calculating the values in each cell
     double sum = 0;
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
         w_matrix[i][i] = 0; //the diagonal line in matrix's values are 0
-    for (int i = 0; i < n; i++){
-        for (int j= i + 1; j < n; j++){
+    for (i = 0; i < n; i++){
+        for (j= i + 1; j < n; j++){
             sum = 0;
-            for (int s = 0; s < vec_length; s++)
+            for (s = 0; s < vec_length; s++)
                 sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2);
             w_matrix[i][j] = exp(pow(sum,(0.5))/-2);
             w_matrix[j][i] = exp(pow(sum,(0.5))/-2);
@@ -581,8 +590,7 @@ double** allocateMem(int n, int d)
     return matrix;
 }
 
-void error_occurred()
-{
+void error_occurred(){
     printf("An Error Has Occurred");
     exit(1);
 }
