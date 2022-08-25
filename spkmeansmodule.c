@@ -107,7 +107,7 @@ static PyObject* get_matrix(PyObject *self, PyObject *args){
         if(k == 0){
             k = eigengap_heuristic(l_matrix, n, vec_length);
         } 
-        matrix = build_matrix_t_eigen(eigens_arr, n, k);
+        matrix = build_matrix_t_eigen(eigens_arr, n, k, vector_length);
         PyList_Append(final_ret, make_list_from_matrix(matrix, n, k));
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
