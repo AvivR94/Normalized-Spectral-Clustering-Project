@@ -6,12 +6,6 @@
 #include "spkmeans.h"
 #define EPSILON 0.00001
 
-/*typedef struct eigens{
-    int index;
-    double value;
-    double* vector;
-} eigens;*/
-
 int main(int argc, char* argv[]){
     int n;
     int i;
@@ -29,7 +23,6 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    /* int k = atoi(argv[1]); */
     goal = argv[1]; /* the enum type */
     input_filename = argv[2]; /* the input */
 

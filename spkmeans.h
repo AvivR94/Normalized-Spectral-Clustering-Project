@@ -38,7 +38,7 @@ void set_tocopy(double** vectors_matrix, double** to_copy, int n);
 int v_calculation(double** p_matrix, double** v_matrix, int first,int vec_length, int n);
 void A_tag_calc(double** to_copy,double** vectors_matrix, int lar_i, int lar_j,int n, double c, double s);
 void A_to_A_tag(double** vectors_matrix,double** to_copy, int n);
-double **getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone);
+double** getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone);
 void resetCentroids(double** centroids,int k, int d);
 void initClusters(int* elements_loc, int* items_number_clusters, int n, int k);
 void saveCentroids(double** old_centeroids, double** centeroids, int k, int d);
