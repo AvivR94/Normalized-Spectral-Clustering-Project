@@ -6,13 +6,11 @@
 #include "spkmeans.h"
 #define EPSILON 0.00001
 
-typedef struct eigens{
+/*typedef struct eigens{
     int index;
     double value;
     double* vector;
-} eigens;
-
-struct eigens *eigensArray;
+} eigens;*/
 
 int main(int argc, char* argv[]){
     int n;
@@ -41,6 +39,8 @@ int main(int argc, char* argv[]){
 
     /* this function counts the num of items in vectors, vec_length and number of vector */
     return_arr = get_vec_num_and_length(temp_file);
+    if (return_arr==NULL)
+        error_occurred();
     n = return_arr[0];
     vec_length = return_arr[1];
 
@@ -322,6 +322,8 @@ struct eigens* jacobi_calc(double** vectors_matrix, int n, int vec_length){
     do{
     /* find latgest item and it's i,j */
     lar_arr = largest_indexes(vectors_matrix, n);
+    if (lar_arr==NULL)
+        error_occurred();
     lar_i = lar_arr[0];
     lar_j = lar_arr[1];
 
@@ -482,15 +484,13 @@ int* get_vec_num_and_length(FILE *temp_file){
     int n, vec_length, first;
     double vector_item;
     char comma;
-    double* ret_arr;
+    int* ret_arr;
     n = 0;
     vec_length = 0;
     first = 0;
     ret_arr = (int*)calloc(2, sizeof(int));
     if (ret_arr == NULL)
-    {
-        return NULL;
-    }       
+        return NULL;      
 
     while(fscanf(temp_file, "%lf%c",&vector_item,&comma) == 2){
         if (comma == '\n'){
@@ -625,17 +625,15 @@ void error_occurred(){
     exit(1);
 }
 
-double* largest_indexes(double** vectors_matrix, int n)
+int* largest_indexes(double** vectors_matrix, int n)
 {
     double largest;
     int i, j, lar_i, lar_j;
-    double* eigenvalues;
+    int* eigenvalues;
 
     eigenvalues = (int*)calloc(2, sizeof(int));
     if (eigenvalues == NULL)
-    {
-        return NULL;
-    }    
+        return NULL;   
     
     largest = 0;
     lar_i = -1;
@@ -661,7 +659,7 @@ double* get_c_and_s(double** vectors_matrix, int lar_i, int lar_j)
 {
     double theta, t, c, s;
     double* cs_arr;
-    cs_arr = (int*)calloc(2, sizeof(int));
+    cs_arr = (double*)calloc(2, sizeof(double));
     if (cs_arr == NULL)
     {
         return NULL;
@@ -816,7 +814,7 @@ double **getFinalCentroids(double **centroids, double **elements, int k, int d, 
     int iteration_number;
     int* elements_location;
     int* items_number_clusters;
-    double** old_centeroids;
+    double** old_centroids;
 
     bit = 1;
     iteration_number = 0;
@@ -829,13 +827,13 @@ double **getFinalCentroids(double **centroids, double **elements, int k, int d, 
     if (!items_number_clusters)
         error_occurred();
 
-    old_centeroids = (double**)calloc(k, sizeof(double*));
-    if (!old_centeroids)
+    old_centroids = (double**)calloc(k, sizeof(double*));
+    if (!old_centroids)
         error_occurred();
 
     for (i=0;i<k;i++){
-        old_centeroids[i]=(double*) calloc(d,sizeof(double));
-            if (!old_centeroids[i])
+        old_centroids[i]=(double*) calloc(d,sizeof(double));
+            if (!old_centroids[i])
                 error_occurred();
     }
 
@@ -844,16 +842,16 @@ double **getFinalCentroids(double **centroids, double **elements, int k, int d, 
         iteration_number++;
         initClusters(elements_location, items_number_clusters, n, k);
         assignCentroids(elements, centroids, items_number_clusters,elements_location,k,d,n);
-        saveCentroids(old_centeroids, centroids, k, d);
+        saveCentroids(old_centroids, centroids, k, d);
         resetCentroids(centroids, k, d);
         updateCentroids(centroids,elements,items_number_clusters,elements_location,d,n,k);
-        bit = Convergence(old_centeroids, centroids, k, d, epsilone);
+        bit = Convergence(old_centroids, centroids, k, d, epsilone);
     }
 
     free(elements_location);
     free(items_number_clusters);
     for(i=0; i<k; i++)
-        free(old_centeroids[i]);
+        free(old_centroids[i]);
     free(old_centroids);
 
     return centroids;
@@ -875,12 +873,12 @@ void initClusters(int* elements_loc, int* items_number_clusters, int n, int k){
         items_number_clusters[i]=0;
 }
 
-void saveCentroids(double** old_centeroids, double** centeroids, int k, int d){
+void saveCentroids(double** old_centroids, double** centroids, int k, int d){
     int i;
     int j;
     for (i=0;i<k;i++){
             for (j=0;j<d;j++)
-                old_centeroids[i][j] = centeroids[i][j];
+                old_centroids[i][j] = centroids[i][j];
         }
 }
 
@@ -937,14 +935,14 @@ void updateCentroids(double** cntrds,double** ele,int* in_clstrs,int *ele_loc,in
         }
 }
 
-int Convergence(double** old_centeroids,double** centeroids,int k,int d,int eps){
+int Convergence(double** old_centroids,double** centroids,int k,int d,int eps){
     int bit = 0;
     int i, j;
     double sum;
     for(i=0; i<k; i++){
         sum = 0.0;
         for (j = 0; j<d; j++)
-            sum += pow((old_centeroids[i][j] + centeroids[i][j]), 2);
+            sum += pow((old_centroids[i][j] + centroids[i][j]), 2);
         sum = pow(sum, 0.5);
         if (sum >= eps)
             bit = 1;

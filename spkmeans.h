@@ -3,6 +3,11 @@
 #include <math.h>
 #include <stdio.h>
 
+typedef struct eigens{
+    int index;
+    double value;
+    double* vector;
+} eigens;
 
 void wam(double** vectors_matrix, int n, int vec_length);
 double** wam_calc(double** vectors_matrix, int n, int vec_length);
@@ -26,7 +31,7 @@ void print_jacobi(struct eigens* eigensArray, int n, int vector_length);
 void print_matrix(double** matrix, int n, int vector_length);
 double** allocateMem(int n, int vector_length);
 void error_occurred();
-double* largest_indexes(double** vectors_matrix, int n);
+int* largest_indexes(double** vectors_matrix, int n);
 double* get_c_and_s(double** vectors_matrix, int lar_i, int lar_j);
 void p_mat_maker(double** p_matrix, int lar_i, int lar_j, int n, double c, double s);
 void set_tocopy(double** vectors_matrix, double** to_copy, int n);
