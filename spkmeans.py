@@ -125,26 +125,22 @@ if __name__ == '__main__':
     d = len(input[0])
     flatten_input = retrieve_flatten_mat(input,n,d)
     final_mat = spkmm.get_matrix(k, n, d, flatten_input, goal)
-    r = len(final_mat[0])
-    c = len(final_mat[0][0])
+    r = len(final_mat)
+    c = len(final_mat[0])
     #printing goal matrix we got from C's goal router here
     #if goal is not spk we will print the matrix we got from goal router here
     if goal in {"wam", "ddg", "lnorm"}:
-        print_matrix(final_mat[0],r,c)
+        print_matrix(final_mat,r,c)
 
-    if (goal == "jacobi"):
-        print_eigens(final_mat[1])
-        for i in range(n):
-            if abs(final_mat[0][0][i])<0.00005:
-                final_mat[0][0][i] = 0.0000
-        print_matrix(final_mat[0],r,c)
-
+    # if goal == 'jacobi', print is made on C code
+    # An instrucor in the moodle forum approved this
+    
     #if goal is spk we will send T (that we got from goal router) to Kmeans algorithm in C
     if goal == "spk":
-        k = len(final_mat[0][0])
-        centroids, indexes = initialize_centroids(final_mat[0], k, n) # these are the first centroids and their indexes
+        k = len(final_mat[0])
+        centroids, indexes = initialize_centroids(final_mat, k, n) # these are the first centroids and their indexes
         initial_centroids_fit_input = retrieve_flatten_mat(centroids,k,k)
-        T_fit_input = retrieve_flatten_mat(final_mat[0],n,k)
+        T_fit_input = retrieve_flatten_mat(final_mat,n,k)
         # getting final centroids out of  T as input points :
         final_centroids= spkmm.fit(k, n, k,initial_centroids_fit_input, T_fit_input)
         # printing the initial indexes and the final centroids (as did in HW2):

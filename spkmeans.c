@@ -269,14 +269,14 @@ void jacobi(double** vectors_matrix, int n){
     int i;
     struct eigens* eigens_arr;
 
-    eigens_arr = jacobi_calc(vectors_matrix, n);
-    print_jacobi(eigens_arr, n);
+    eigens_arr = jacobi_calc(vectors_matrix, n, 1);
     for(i=0; i<n; i++)
         free(eigens_arr[i].vector);
     free(eigens_arr);
 }
 
-struct eigens* jacobi_calc(double** A_matrix, int n){
+/* print = 1 means do print, print = 0 means do not */
+struct eigens* jacobi_calc(double** A_matrix, int n, int print){
     double off;
     int i, lar_i, lar_j, rotations_number;
     double** P_matrix;
@@ -310,7 +310,7 @@ struct eigens* jacobi_calc(double** A_matrix, int n){
     matrix_multiplication(n, n, V_matrix, P_matrix, temp_matrix);
 
     /* V =  temp */
-    copy_matrices(temp_matrix, V_matrix, n);
+    copy_matrices(V_matrix, temp_matrix, n);
 
     /* calc off(A) - off(A') */
     off = off_func(A_matrix, Atag_matrix, n); 
@@ -331,6 +331,8 @@ struct eigens* jacobi_calc(double** A_matrix, int n){
         eigensArray[i].vector = copy_to_eigen_vectors(V_trans_matrix[i], n);
     }
 
+    if (print == 1)
+        print_jacobi(eigensArray, n);
 
     for(i = 0; i < n ; i++){
         free(P_matrix[i]);
@@ -373,7 +375,6 @@ double** matrix_Transpose(double** mat, int n, int vec_length){
     int i, j;
     double** trans_matrix;
 
-
     trans_matrix = allocateMem(n, vec_length);
     if (trans_matrix == NULL)
         error_occurred();
@@ -408,42 +409,42 @@ int comparator(const void* first, const void* second)
 double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
     int i;
     int j;
-    int sum;
+    double sum;
     double** t_matrix_eigen;
-    double** u_matrix;
+    double** matrix_U;
 
     t_matrix_eigen = allocateMem(n, k);
     if (t_matrix_eigen == NULL)
         error_occurred();
-    u_matrix = allocateMem(n, k);
-    if (u_matrix == NULL)
+    matrix_U = allocateMem(n, k);
+    if (matrix_U == NULL)
         error_occurred();
 
     for(i = 0; i < k; i++){
         for(j = 0; j < n; j++){
-             u_matrix[j][i] = eigensArray[i].vector[j];
+             matrix_U[j][i] = eigensArray[i].vector[j];
         }
     }
 
     for(i = 0; i < n; i++){
         sum = 0;
         for(j = 0; j < k; j++)
-            sum += u_matrix[i][j] * u_matrix[i][j];
+            sum += matrix_U[i][j] * matrix_U[i][j];
 
         sum = sqrt(sum);
 
         for(j = 0; j < k; j++){
             if(sum != 0)
-                t_matrix_eigen[i][j] = ((u_matrix[i][j]) / (sum));
+                t_matrix_eigen[i][j] = ((matrix_U[i][j]) / (sum));
             else
                 t_matrix_eigen[i][j] = 0.0;
         }
     }
 
     for(i=0; i<n; i++){
-        free(u_matrix[i]);
+        free(matrix_U[i]);
     }
-    free(u_matrix);
+    free(matrix_U);
 
     return t_matrix_eigen;
 }
@@ -456,6 +457,7 @@ double* copy_to_eigen_vectors(double* vec_matrix, int n){
     vector = (double*) calloc(n, sizeof(double));
     if (vector == NULL)
         error_occurred();
+    
     for(i = 0; i < n; i++){
         vector[i] = vec_matrix[i];
     }
@@ -467,10 +469,14 @@ void matrix_multiplication(int rows_num, int columns_num, double** mat1, double*
 {
     int i, j, k;
 
-    for (i = 0; i < rows_num; i++)
-        for (j = 0; j < columns_num; j++)
-            for (k = 0; k < rows_num; k++)
+    for (i = 0; i < rows_num; i++){
+        for (j = 0; j < columns_num; j++){
+            result[i][j] = 0;
+            for (k = 0; k < rows_num; k++){
                 result[i][j] += mat1[i][k] * mat2[k][j];
+            }
+        }
+    }
 }
 
 /* the function calculate off(A)^2 and off(A')^2*/
@@ -511,9 +517,12 @@ void print_jacobi(struct eigens* eigensArray, int n){
     double** jacobi_matrix;
 
     for (i = 0; i < n; i++){
-        printf("%.4f", eigensArray[i].value);
+         if(eigensArray[i].value < 0 && eigensArray[i].value > -0.00005)
+            printf("0.0000");
+        else
+            printf("%.4f", eigensArray[i].value);
         if(i != n - 1)
-                printf(",");
+            printf(",");
     }
     printf("\n");
     jacobi_matrix = jacobi_mat_for_print(eigensArray, n);

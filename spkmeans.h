@@ -17,7 +17,7 @@ void lnorm(double** vectors_matrix, int n, int vec_length);
 double** lnorm_calc(double** w_matrix, double** d_matrix, int n, int vec_length);
 int eigengap_heuristic(struct eigens* eigensArray, int n);
 void jacobi(double** vectors_matrix, int n);
-struct eigens* jacobi_calc(double** A_matrix, int n);
+struct eigens* jacobi_calc(double** A_matrix, int n, int print);
 void copy_matrices(double** matrix_A, double** matrix_B, int n);
 double** build_matrixI(int n);
 double** matrix_Transpose(double** mat, int n, int vec_length);
