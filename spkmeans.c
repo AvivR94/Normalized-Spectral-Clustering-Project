@@ -254,29 +254,28 @@ int eigengap_heuristic(struct eigens* eigensArray, int n){
     
     /*k = argmax_i(delta_i), i = 1,...,n/2 */
     argmax_i = deltas[0];
-    for (i = 0; i < (int)(n/2); i++)
+    for (i = 0; i < (int)(n/2); i++){
         if (deltas[i] > argmax_i)
             argmax_i = deltas[i];
-
-    k = argmax_i;
+    }
     
     free(deltas);
 
-    return k;
+    return (argmax_i+1);
 }
 
 void jacobi(double** vectors_matrix, int n){
     int i;
     struct eigens* eigens_arr;
 
-    eigens_arr = jacobi_calc(vectors_matrix, n, 1);
+    eigens_arr = jacobi_calc(vectors_matrix, n, 1, 1);
     for(i=0; i<n; i++)
         free(eigens_arr[i].vector);
     free(eigens_arr);
 }
 
 /* print = 1 means do print, print = 0 means do not */
-struct eigens* jacobi_calc(double** A_matrix, int n, int print){
+struct eigens* jacobi_calc(double** A_matrix, int n, int print, int sort){
     double off;
     int i, lar_i, lar_j, rotations_number;
     double** P_matrix;
@@ -346,7 +345,8 @@ struct eigens* jacobi_calc(double** A_matrix, int n, int print){
     free(temp_matrix);
     free(Atag_matrix);
     free(lar_arr);
-    qsort(eigensArray, n, sizeof(struct eigens), comparator);
+    if (sort == 1)
+        qsort(eigensArray, n, sizeof(struct eigens), comparator);
     return eigensArray;
 }
 
@@ -397,9 +397,9 @@ int comparator(const void* first, const void* second)
     e2 =  (struct eigens*) second;
 
     if (e1->value > e2->value)
-        return 1;
-    else if (e1->value < e2->value) 
         return -1;
+    else if (e1->value < e2->value) 
+        return 1;
     else if (e1->index < e2->index) 
         return -1;
     return 0;
@@ -428,16 +428,18 @@ double** build_matrix_t_eigen(struct eigens* eigensArray, int n, int k){
 
     for(i = 0; i < n; i++){
         sum = 0;
-        for(j = 0; j < k; j++)
+        for(j = 0; j < k; j++){
             sum += matrix_U[i][j] * matrix_U[i][j];
-
+        }
         sum = sqrt(sum);
 
         for(j = 0; j < k; j++){
-            if(sum != 0)
+            if(sum != 0){
                 t_matrix_eigen[i][j] = ((matrix_U[i][j]) / (sum));
-            else
+            }
+            else{
                 t_matrix_eigen[i][j] = 0.0;
+            }
         }
     }
 
@@ -695,7 +697,7 @@ double** build_matrixAtag(double** A_matrix,int n,int lar_i,int lar_j){
 }
 
 /* K-means Functions */
-double **getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone)
+void getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone)
 {
     int bit;
     int i;
@@ -725,8 +727,7 @@ double **getFinalCentroids(double **centroids, double **elements, int k, int d, 
                 error_occurred();
     }
 
-    while (bit==1 && max_iter>iteration_number)
-    {
+    while (bit==1 && max_iter>iteration_number){
         iteration_number++;
         initClusters(elements_location, items_number_clusters, n, k);
         assignCentroids(elements, centroids, items_number_clusters,elements_location,k,d,n);
@@ -741,8 +742,6 @@ double **getFinalCentroids(double **centroids, double **elements, int k, int d, 
     for(i=0; i<k; i++)
         free(old_centroids[i]);
     free(old_centroids);
-
-    return centroids;
 }
 
 void resetCentroids(double** centroids,int k, int d){
@@ -772,13 +771,12 @@ void saveCentroids(double** old_centroids, double** centroids, int k, int d){
 
 void assignCentroids(double **ele,double **cntrds,int* in_clstrs,int* ele_loc,int k,int d,int n)
 {
-    int i;
-    int j;
-    int l;
+    int i, j, l;
     double sum=0.0;
     double min;
     int flag;
     int min_index;
+
     for (i=0; i < n; i++){
         min_index = 0;
         flag = 0;
@@ -803,9 +801,8 @@ void assignCentroids(double **ele,double **cntrds,int* in_clstrs,int* ele_loc,in
 
 void updateCentroids(double** cntrds,double** ele,int* in_clstrs,int *ele_loc,int d,int n,int k)
 {
-    int m;
-    int i;
-    int q;
+    int m, i, q;
+
     for (i=0;i<k;i++){
             for (m=0;m<n;m++){
                 if (ele_loc[m]==i){
@@ -823,9 +820,11 @@ void updateCentroids(double** cntrds,double** ele,int* in_clstrs,int *ele_loc,in
 }
 
 int Convergence(double** old_centroids,double** centroids,int k,int d,int eps){
-    int bit = 0;
+    int bit;
     int i, j;
     double sum;
+
+    bit = 0;
     for(i=0; i<k; i++){
         sum = 0.0;
         for (j = 0; j<d; j++)

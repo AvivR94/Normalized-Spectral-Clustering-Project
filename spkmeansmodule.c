@@ -5,10 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Helper functions for get_matrix
-
+/* helper function */
 static PyObject* make_list_from_matrix(double** matrix, int n, int k){
-    PyObject *lst = PyList_New(0);
+    int i, j;
+    PyObject *lst;
+    PyObject *row;
+
+    lst = PyList_New(0);
     if(!lst)
         return NULL;
     for(i = 0; i < n; i++){
@@ -19,18 +22,17 @@ static PyObject* make_list_from_matrix(double** matrix, int n, int k){
         }
         for(j = 0; j < k; j++){
             PyList_Append(row,PyFloat_FromDouble((double)matrix[i][j]));
-            if (!num){
-                Py_DECREF(lst);
-                return NULL;
-            }
         }
         PyList_Append(lst, row);
     }
     return lst;      
 }
 
-static PyObject* make_list_from_array(double* array, int n){
-    PyObject *lst = PyList_New(0);
+/*static PyObject* make_list_from_array(double* array, int n){
+    PyObject *lst;
+    int i;
+
+    lst = PyList_New(0);
     if(!lst)
         return NULL;
     for(i = 0; i < n; i++){
@@ -42,22 +44,27 @@ static PyObject* make_list_from_array(double* array, int n){
         PyList_Append(lst, num);
     }
     return lst;  
-}
+}*/
 
-//function built for python usage
+/* function built for python usage */
 
 static PyObject* get_matrix(PyObject *self, PyObject *args){
     PyObject *python_matrix;
     PyObject *final_mat;
-    int n;
-    int k;
+    PyObject *eigens_list;
+    PyObject *row;
+    int n, k, i, j;
     int vector_length;
-    char *func;
+    char* goal;
     double** original_matrix;
-    double** matrix;
-    
-    if (!PyArg_ParseTuple(args, "Oiiis", &python_matrix, &k, &n, &vector_length, &func))
-        error_occurred();
+    double** w_matrix;
+    double** d_matrix;
+    double** l_matrix;
+    double** t_matrix;
+    struct eigens* eigens_arr;
+    if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vector_length, &python_matrix, &goal)){
+        error_occurred();}
+
     original_matrix = allocateMem(n, vector_length);
     if (original_matrix == NULL)
         error_occurred();
@@ -67,62 +74,104 @@ static PyObject* get_matrix(PyObject *self, PyObject *args){
             original_matrix[i][j] = PyFloat_AsDouble(num);
         }
     }
+    final_mat = PyList_New(0);
     
-    //check which goal to choose
+    /* check which goal to choose */
 
     if(strcmp(goal, "wam") == 0){
-        matrix = wam_calc(original_matrix, n, vector_length);
+        w_matrix = wam_calc(original_matrix, n, vector_length);
+        final_mat = make_list_from_matrix(w_matrix, n, vector_length);
+        for(i = 0; i < n ; i++){
+            free(w_matrix[i]);
+        }
+        free(w_matrix);
     }
 
     else if (strcmp(goal, "ddg") == 0){
-        matrix = ddg_calc(original_matrix, n, vector_length);
+        w_matrix = wam_calc(original_matrix, n, vector_length);
+        d_matrix = ddg_calc(w_matrix, n);
+        final_mat = make_list_from_matrix(d_matrix, n, vector_length);
+        for(i = 0; i < n ; i++){
+            free(w_matrix[i]);
+            free(d_matrix[i]);
+        }
+        free(w_matrix);
+        free(d_matrix);
     }
 
     else if (strcmp(goal, "lnorm") == 0){
-        matrix = lnorm_calc(original_matrix, n, vector_length);
-    }
-
-    else if (strcmp(goal, "jacobi") == 0){
-        jacobi(original_matrix, n);
-        
-    }
-
-    else if (strcmp(goal, "spk") == 0){
-        w_matrix = wam_calc(original_matrix, n, vec_length);
-        d_matrix = ddg_calc(w_matrix, n, vec_length);
-        l_matrix = lnorm_calc(d_matrix, n, vec_length);
-        eigens_arr = jacobi_calc(l_matrix, n, 0);
-        if(k == 0){
-            k = eigengap_heuristic(l_matrix, n, vec_length);
-        } 
-        matrix = build_matrix_t_eigen(eigens_arr, n, k, vector_length);
-        final_mat = make_list_from_matrix(matrix, n, k);
+        w_matrix = wam_calc(original_matrix, n, vector_length);
+        d_matrix = ddg_calc(w_matrix, n);
+        l_matrix = lnorm_calc(w_matrix, d_matrix, n, vector_length);
+        final_mat = make_list_from_matrix(l_matrix, n, vector_length);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
             free(l_matrix[i]);
-            free(eigens_arr[i]);
+        }
+        free(w_matrix);
+        free(d_matrix);
+        free(l_matrix);
+    }
+
+    else if (strcmp(goal, "jacobi") == 0){
+        double** jacobi_matrix;
+        eigens_arr = jacobi_calc(original_matrix, n, 0, 0);
+        jacobi_matrix = jacobi_mat_for_print(eigens_arr, n);
+        eigens_list = PyList_New(0);
+        if(!eigens_list)
+            error_occurred();
+        for(i=0; i<n; i++){
+            PyList_Append(eigens_list, PyFloat_FromDouble((double)eigens_arr[i].value));
+        }
+        PyList_Append(final_mat, eigens_list);
+        for(i = 0; i < n; i++){
+            row = PyList_New(0);
+            if(!row){
+                Py_DECREF(final_mat);
+                error_occurred();
+            }
+            for(j = 0; j < k; j++){
+                PyList_Append(row,PyFloat_FromDouble((double)jacobi_matrix[i][j]));
+            }
+            PyList_Append(final_mat, row);
+        }
+        for(i = 0; i < n ; i++){
+            free(eigens_arr[i].vector);
+            free(jacobi_matrix[i]);
+        }
+        free(eigens_arr);
+        free(jacobi_matrix);
+    }
+
+    else if (strcmp(goal, "spk") == 0){
+        w_matrix = wam_calc(original_matrix, n, vector_length);
+        d_matrix = ddg_calc(w_matrix, n);
+        l_matrix = lnorm_calc(w_matrix, d_matrix, n, vector_length);
+        eigens_arr = jacobi_calc(l_matrix, n, 0, 1);
+        if(k == 0){
+            k = eigengap_heuristic(eigens_arr, n);
+        } 
+        t_matrix = build_matrix_t_eigen(eigens_arr, n, k);
+        final_mat = make_list_from_matrix(t_matrix, n, k);
+        for(i = 0; i < n ; i++){
+            free(w_matrix[i]);
+            free(d_matrix[i]);
+            free(l_matrix[i]);
+            free(eigens_arr[i].vector);
+            free(t_matrix[i]);
         }
         free(w_matrix);
         free(d_matrix);
         free(l_matrix);
         free(eigens_arr);
+        free(t_matrix);
     }
-
-    if (strcmp(goal, "spk") != 0 && strcmp(goal, "jacobi") != 0)
-        final_mat = make_list_from_matrix(matrix, n, vector_length);
 
     for(i=0; i<n; i++) {
         free(original_matrix[i]);
     }
     free(original_matrix);
-
-    if (strcmp(goal, "jacobi") != 0){
-        for(i=0; i<n; i++)
-            free(matrix[i]);
-        free(matrix);
-    }
-    
     return Py_BuildValue("O", final_mat);
 }
 
@@ -133,25 +182,17 @@ static PyObject* get_matrix(PyObject *self, PyObject *args){
  */
 static PyObject* fit(PyObject *self, PyObject *args){
     PyObject *items_of_py;
-    PyObject *ret;
-    PyObject *pylist;
-    PyObject *centroids_from_py, *vectors_from_py;
-    PyObject *pyCent;
-    PyObject *pyCentArr;
-    int n, k, d, i, j;
-    int bit;
-    int iteration_number;
-    int min_index;
-    int flag;
-    double sum;
-    double min;
-    double** centroids;
+    PyObject *centroids_arr;
+    PyObject *centroids_from_py;
+    PyObject *vectors_from_py;
+    int n, k, d; 
+    int i, j;
     double** elements;
-    double *our_final_centroids;
-    double cordinate;
-    
-    if (!PyArg_ParseTuple(args, "iiiOO", &k, &n, &d, &centroids_from_py, &vectors_from_py))
+    double** centroids;
+
+    if (!PyArg_ParseTuple(args, "iiiOO", &k, &n, &d, &centroids_from_py, &vectors_from_py)){
         error_occurred();
+    }
 
     elements = (double**)calloc(n, sizeof(double*));
     if (!elements)
@@ -170,7 +211,7 @@ static PyObject* fit(PyObject *self, PyObject *args){
         }
     }
 
-    // init centroids
+    /*init centroids*/
     centroids = (double**)calloc(k, sizeof(double*));
     if (!centroids)
         error_occurred();
@@ -187,37 +228,27 @@ static PyObject* fit(PyObject *self, PyObject *args){
             centroids[i][j] = PyFloat_AsDouble(items_of_py);
         }
     }
-
-    /*now we have first centroids from python in C array */
-
-    our_final_centroids = getFinalCentroids(centroids, elements, k, d, n, 300, 0);
-    /* creating final centroids array for python in matrix form */
-    pyCentArr = PyList_New(0);
-
-    for (i = 0; i < k; i++){
-        pyCent = PyList_New(0);
-        for (j = 0; j < k; j++)
-            PyList_Append(pyCent, PyFloat_FromDouble(our_final_centroids[i * k + j]));
-        PyList_Append(pyCentArr, pyCent);
-    }
-
+    /*now we have first centroids from python in C array*/
+    getFinalCentroids(centroids, elements, k, d, n, 300, 0);
+    /*creating final centroids array for python in matrix form*/
+    centroids_arr = make_list_from_matrix(centroids,k,k);
     for(i=0; i<n; i++)
         free(elements[i]);
     free(elements);
     for(i=0; i<k; i++)
         free(centroids[i]);
     free(centroids);
-
-    return Py_BuildValue("O", pyCentArr);
+    return Py_BuildValue("O", centroids_arr);
 }
 
 
 
- //Python C-API functions
+ /* Python C-API functions */
 
 static PyMethodDef spkmeansmoduleMethods[] = {
-        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("Kmeans++")},
         {"get_matrix", (PyCFunction) get_matrix, METH_VARARGS, PyDoc_STR("c usage for getting the matrixes")},
+        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("Kmeans++")},
+        
         {NULL,  NULL, 0, NULL}
 };
 

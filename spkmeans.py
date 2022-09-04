@@ -19,12 +19,12 @@ def initialize_centroids(vectors, k, n): #points is matrix of points
         i += 1
     return centroids, indexes_used
 
-def input_to_float(input,n):
+"""def input_to_float(input,n):
     for i in range(n):
         vector = input[i].split(",")
         for j in range(len(vector)):
             vector[j] = float(vector[j])
-        input[i] = vector
+        input[i] = vector"""
 
 def retrieve_distances(vectors, centroids):
     n = len(vectors)
@@ -54,19 +54,19 @@ def retrieve_prob(distances):
     
 def retrieve_flatten_mat(mat,r,c):
     lst = []
-    for i in range (r):
-        for j in range (c):
-            lst.append(mat[i][j])
+    for i in range(r):
+        for j in range(c):
+            lst.append(float(mat[i][j]))
     return lst
 
 #helping functions to print matrix in python
-def spk_print(final_centroids,indexes):    
+def spk_print(final_centroids,indexes, k):    
     for i in range(len(indexes)):
         indexes[i] = str(indexes[i])
 
     indexes = ",".join(indexes)
     print(indexes)
-    print_matrix(final_centroids, len(final_centroids), len(final_centroids[0]))
+    print_matrix(final_centroids, k, k)
 
 def print_matrix(mat, r, c):
     for i in range(r):
@@ -77,14 +77,22 @@ def print_matrix(mat, r, c):
         result.append(",".join(mat[i]))
     for i in range(r):
         if (i != r-1):
-            print(",".join(result[i]))
+            print(result[i])
         else:
-            print(",".join(result[i])+"\n")
+            print(result[i]+"\n")
 
-def print_eigens(eigens):
-    for i in range(len(eigens)):
-        eigens[i] = str(eigens[i])
-    print(",".join(eigens))
+def print_jacobi(mat, n):
+    for i in range(n+1):
+        for j in range(n):
+            mat[i][j] = '%.4f'%mat[i][j]
+    result = []
+    for i in range(n+1):
+        result.append(",".join(mat[i]))
+    for i in range(n+1):
+        if (i != n):
+            print(result[i])
+        else:
+            print(result[i]+"\n")
 
 # main 
 if __name__ == '__main__':
@@ -101,29 +109,20 @@ if __name__ == '__main__':
         if goal not in possible_goals:
             print("Invalid Input!")
             sys.exit()
-        filename = sys.argv[3]
+        #read the input file
+        input = np.loadtxt(sys.argv[3], delimiter=',')
     except ValueError:
         print("Invalid Input!")
         sys.exit()
-    #read the input file
-    try:
-        f = open(filename, "r")
-        reading_file = f.read()
-        input = reading_file.splitlines()
-        f.close()
-    except:
-        print("An Error Has Occurred")
-        sys.exit()
-    
-    n = len(input)
+
+    n = input.shape[0]
+    d = input.shape[1]
     #check for validity of k
     if (k==1 and goal=="spk") or k>=n or k<0: 
         print("Invalid Input!")
         sys.exit()
-        
-    input_to_float(input,n)
-    d = len(input[0])
-    flatten_input = retrieve_flatten_mat(input,n,d)
+
+    flatten_input = input.flatten().tolist()
     final_mat = spkmm.get_matrix(k, n, d, flatten_input, goal)
     r = len(final_mat)
     c = len(final_mat[0])
@@ -132,9 +131,10 @@ if __name__ == '__main__':
     if goal in {"wam", "ddg", "lnorm"}:
         print_matrix(final_mat,r,c)
 
-    # if goal == 'jacobi', print is made on C code
-    # An instrucor in the moodle forum approved this
-    
+    # jacobi prints the eigenvalues first and the matrix.
+    if goal == "jacobi":
+        print_jacobi(final_mat,r)
+
     #if goal is spk we will send T (that we got from goal router) to Kmeans algorithm in C
     if goal == "spk":
         k = len(final_mat[0])
@@ -142,6 +142,6 @@ if __name__ == '__main__':
         initial_centroids_fit_input = retrieve_flatten_mat(centroids,k,k)
         T_fit_input = retrieve_flatten_mat(final_mat,n,k)
         # getting final centroids out of  T as input points :
-        final_centroids= spkmm.fit(k, n, k,initial_centroids_fit_input, T_fit_input)
+        final_centroids = spkmm.fit(k, n, k ,initial_centroids_fit_input, T_fit_input)
         # printing the initial indexes and the final centroids (as did in HW2):
-        spk_print(final_centroids,indexes)
+        spk_print(final_centroids, indexes, k)
