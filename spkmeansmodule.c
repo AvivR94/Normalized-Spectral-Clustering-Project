@@ -34,10 +34,11 @@ static PyObject* makeListFromMatrix(double** matrix, int n, int k){
  * and returns the matrix needed for python.
  */
 static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
-    PyObject *python_matrix;
+    PyObject *py_matrix;
     PyObject *final_mat;
     PyObject *eigens_list;
     PyObject *row;
+    PyObject *element;
     int n, k, i, j;
     int vector_length;
     char* goal;
@@ -47,7 +48,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     double** l_matrix;
     double** t_matrix;
     struct eigens* eigens_arr;
-    if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vector_length, &python_matrix, &goal)){
+    if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vector_length, &py_matrix, &goal)){
         errorOccured();}
 
     original_matrix = allocateMem(n, vector_length);
@@ -55,17 +56,16 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         errorOccured();
     for(i = 0; i < n; i++){
         for (j = 0; j < vector_length ; j++) {
-            PyObject* num = PyList_GetItem(python_matrix, (vector_length*i) + j);
-            original_matrix[i][j] = PyFloat_AsDouble(num);
+            PyObject* element = PyList_GetItem(py_matrix, (vector_length*i) + j);
+            original_matrix[i][j] = PyFloat_AsDouble(element);
         }
     }
     final_mat = PyList_New(0);
     
-    /* check which goal to choose */
-
+    /* choose which goal to perform */
     if(strcmp(goal, "wam") == 0){
         w_matrix = wamCalc(original_matrix, n, vector_length);
-        final_mat = makeListFromMatrix(w_matrix, n, vector_length);
+        final_mat = makeListFromMatrix(w_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
         }
@@ -75,7 +75,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     else if (strcmp(goal, "ddg") == 0){
         w_matrix = wamCalc(original_matrix, n, vector_length);
         d_matrix = ddgCalc(w_matrix, n);
-        final_mat = makeListFromMatrix(d_matrix, n, vector_length);
+        final_mat = makeListFromMatrix(d_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
@@ -87,8 +87,8 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     else if (strcmp(goal, "lnorm") == 0){
         w_matrix = wamCalc(original_matrix, n, vector_length);
         d_matrix = ddgCalc(w_matrix, n);
-        l_matrix = lnormCalc(w_matrix, d_matrix, n, vector_length);
-        final_mat = makeListFromMatrix(l_matrix, n, vector_length);
+        l_matrix = lnormCalc(w_matrix, d_matrix, n);
+        final_mat = makeListFromMatrix(l_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
@@ -116,7 +116,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
                 Py_DECREF(final_mat);
                 errorOccured();
             }
-            for(j = 0; j < k; j++){
+            for(j = 0; j < n; j++){
                 PyList_Append(row,PyFloat_FromDouble((double)jacobi_matrix[i][j]));
             }
             PyList_Append(final_mat, row);
@@ -127,12 +127,13 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         }
         free(eigens_arr);
         free(jacobi_matrix);
+        
     }
 
     else if (strcmp(goal, "spk") == 0){
         w_matrix = wamCalc(original_matrix, n, vector_length);
         d_matrix = ddgCalc(w_matrix, n);
-        l_matrix = lnormCalc(w_matrix, d_matrix, n, vector_length);
+        l_matrix = lnormCalc(w_matrix, d_matrix, n);
         eigens_arr = jacobiCalc(l_matrix, n, 0, 1);
         if(k == 0){
             k = eigengapHeuristic(eigens_arr, n);
@@ -166,16 +167,16 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
  * returns the centroids of the clusters.
  */
 static PyObject* fit(PyObject *self, PyObject *args){
-    PyObject *items_of_py;
+    PyObject *element;
     PyObject *centroids_arr;
-    PyObject *centroids_from_py;
-    PyObject *vectors_from_py;
+    PyObject *py_centroids;
+    PyObject *py_vectors;
     int n, k, d; 
     int i, j;
     double** elements;
     double** centroids;
 
-    if (!PyArg_ParseTuple(args, "iiiOO", &k, &n, &d, &centroids_from_py, &vectors_from_py)){
+    if (!PyArg_ParseTuple(args, "iiiOO", &k, &n, &d, &py_centroids, &py_vectors)){
         errorOccured();
     }
 
@@ -185,44 +186,44 @@ static PyObject* fit(PyObject *self, PyObject *args){
 
     for (i=0;i<n;i++){
         elements[i]=(double*) calloc(d,sizeof(double));
-            if (!elements[i])
-                errorOccured();
+        if (!elements[i])
+            errorOccured();
     }
 
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < d; j++) {
-            items_of_py = PyList_GetItem(vectors_from_py, i * d + j);
-            elements[i][j] = PyFloat_AsDouble(items_of_py);
+    for (i = 0; i < n; i++){
+        for (j = 0; j < d; j++){
+            element = PyList_GetItem(py_vectors, i * d + j);
+            elements[i][j] = PyFloat_AsDouble(element);
         }
     }
 
-    /*init centroids*/
     centroids = (double**)calloc(k, sizeof(double*));
     if (!centroids)
         errorOccured();
 
     for (i=0;i<k;i++){
         centroids[i]=(double*) calloc(d,sizeof(double));
-            if (!centroids[i])
-                errorOccured();
+        if (!centroids[i])
+            errorOccured();
     }
 
      for (i = 0; i < k; i++) {
         for (j = 0; j < d; j++) {
-            items_of_py = PyList_GetItem(centroids_from_py, i * d + j);
-            centroids[i][j] = PyFloat_AsDouble(items_of_py);
+            element = PyList_GetItem(py_centroids, i * d + j);
+            centroids[i][j] = PyFloat_AsDouble(element);
         }
     }
-    /*now we have first centroids from python in C array*/
+
     getFinalCentroids(centroids, elements, k, d, n, 300, 0);
-    /*creating final centroids array for python in matrix form*/
     centroids_arr = makeListFromMatrix(centroids,k,k);
+
     for(i=0; i<n; i++)
         free(elements[i]);
     free(elements);
     for(i=0; i<k; i++)
         free(centroids[i]);
     free(centroids);
+
     return Py_BuildValue("O", centroids_arr);
 }
 

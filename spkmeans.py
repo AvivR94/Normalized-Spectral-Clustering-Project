@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import spkmeansmodule as spkmm
 
-def initializeCentroids(vectors, k, n): #points is matrix of points
+def initializeCentroids(vectors, k, n):
     np.random.seed(0)
     centroids = []
     random_index = np.random.randint(n)
@@ -19,13 +19,7 @@ def initializeCentroids(vectors, k, n): #points is matrix of points
         i += 1
     return centroids, indexes_used
 
-"""def input_to_float(input,n):
-    for i in range(n):
-        vector = input[i].split(",")
-        for j in range(len(vector)):
-            vector[j] = float(vector[j])
-        input[i] = vector"""
-
+# distances for init centroids
 def retrieveDistances(vectors, centroids):
     n = len(vectors)
     distances = [0 for i in range(n)]
@@ -37,13 +31,14 @@ def retrieveDistances(vectors, centroids):
                 min = dist
         distances[j] = min
     return distances
-    
+
 def distanceCalc(x, y):
     dist=0
     for i in range(len(x)):
         dist+=(float(x[i])-float(y[i]))**2
     return dist
 
+# probabilities for init centroids
 def retrieveProb(distances):
     n = len(distances)
     Sum = sum(distances)
@@ -51,7 +46,8 @@ def retrieveProb(distances):
     for i in range(n):
         prob[i] = distances[i]/Sum
     return prob
-    
+
+# flatten mat is a mat in an array form, for C-API
 def retrieveFlattenMat(mat,r,c):
     lst = []
     for i in range(r):
@@ -59,27 +55,16 @@ def retrieveFlattenMat(mat,r,c):
             lst.append(float(mat[i][j]))
     return lst
 
-#helping functions to print matrix in python
-def printSPK(final_centroids,indexes, k):    
-    for i in range(len(indexes)):
-        indexes[i] = str(indexes[i])
-
-    indexes = ",".join(indexes)
-    print(indexes)
-    printMatrix(final_centroids, k, k)
-
-def printMatrix(mat, r, c):
-    for i in range(r):
-        for j in range(c):
+# print matrices in python by goal
+def printMatrix(mat, rows, columns):
+    for i in range(rows):
+        for j in range(columns):
             mat[i][j] = '%.4f'%mat[i][j]
         result = []
-    for i in range(r):
+    for i in range(rows):
         result.append(",".join(mat[i]))
-    for i in range(r):
-        if (i != r-1):
+    for i in range(rows):
             print(result[i])
-        else:
-            print(result[i]+"\n")
 
 def printJacobi(mat, n):
     for i in range(n+1):
@@ -89,10 +74,15 @@ def printJacobi(mat, n):
     for i in range(n+1):
         result.append(",".join(mat[i]))
     for i in range(n+1):
-        if (i != n):
             print(result[i])
-        else:
-            print(result[i]+"\n")
+
+def printSPK(final_centroids,indexes, k):    
+    for i in range(len(indexes)):
+        indexes[i] = str(indexes[i])
+
+    indexes = ",".join(indexes)
+    print(indexes)
+    printMatrix(final_centroids, k, k)
 
 # main 
 if __name__ == '__main__':
@@ -100,7 +90,7 @@ if __name__ == '__main__':
     if len(sys.argv) != 4:
         print("Invalid Input!")
         sys.exit()
-    #read arguments
+    # read arguments
     try:
         k = int(sys.argv[1]) 
         max_iter = 300
@@ -109,7 +99,7 @@ if __name__ == '__main__':
         if goal not in possible_goals:
             print("Invalid Input!")
             sys.exit()
-        #read the input file
+        # read the input file
         input = np.loadtxt(sys.argv[3], delimiter=',')
     except ValueError:
         print("Invalid Input!")
@@ -117,31 +107,35 @@ if __name__ == '__main__':
 
     n = input.shape[0]
     d = input.shape[1]
-    #check for validity of k
-    if (k==1 and goal=="spk") or k>=n or k<0: 
+    # check for validity of k input
+    if ((k==1 or k>=n) and goal=="spk") or k<0: 
         print("Invalid Input!")
         sys.exit()
 
     flatten_input = input.flatten().tolist()
     final_mat = spkmm.getMatrixByGoal(k, n, d, flatten_input, goal)
-    r = len(final_mat)
-    c = len(final_mat[0])
-    #printing goal matrix we got from C's goal router here
-    #if goal is not spk we will print the matrix we got from goal router here
+    rows = len(final_mat)
+    columns = len(final_mat[0])
+
+    # if goal is not jacobi or spk, print the matrix from C as is
     if goal in {"wam", "ddg", "lnorm"}:
-        printMatrix(final_mat,r,c)
+        printMatrix(final_mat, rows, columns)
 
-    # jacobi prints the eigenvalues first and the matrix.
+    # jacobi prints the eigenvalues and then the matrix
     if goal == "jacobi":
-        printJacobi(final_mat,r)
+        printJacobi(final_mat, n)
 
-    #if goal is spk we will send T (that we got from goal router) to Kmeans algorithm in C
+    # spk: T matrix is recieved by C, sent to fit function, Kmeans in C
     if goal == "spk":
         k = len(final_mat[0])
-        centroids, indexes = initializeCentroids(final_mat, k, n) # these are the first centroids and their indexes
-        initial_centroids_fit_input = retrieveFlattenMat(centroids,k,k)
-        T_fit_input = retrieveFlattenMat(final_mat,n,k)
-        # getting final centroids out of  T as input points :
-        final_centroids = spkmm.fit(k, n, k ,initial_centroids_fit_input, T_fit_input)
-        # printing the initial indexes and the final centroids (as did in HW2):
+        centroids, indexes = initializeCentroids(final_mat, k, n)
+        
+        # preparing the matrices for input to C
+        initial_centroids = retrieveFlattenMat(centroids, k, k)
+        T_matrix = retrieveFlattenMat(final_mat, n, k)
+        
+        # final centroids received by fit functions 
+        final_centroids = spkmm.fit(k, n, k ,initial_centroids, T_matrix)
+        
+        # prints the initial indexes and the final centroids
         printSPK(final_centroids, indexes, k)
