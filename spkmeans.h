@@ -38,6 +38,7 @@ double retrieveT(double theta);
 double retrieveC(double t);
 double retrieveS(double t, double c);
 int sign(double theta);
+double* retrieveMathVars(double** A_matrix, int lar_i, int lar_j);
 double** createMatrixP(double** A_matrix,int n, int lar_i, int lar_j);
 double** createMatrixAtag(double** A_matrix,int n,int lar_i,int lar_j);
 void getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone);

@@ -280,13 +280,14 @@ struct eigens* jacobiCalc(double** A_matrix, int n, int print, int sort){
     int* lar_arr;
 
     rotations_number = 0;
+    off = 1;
     temp_matrix = allocateMem(n,n);
     V_matrix = createMatrixI(n);
     eigensArray = (eigens*) calloc(n, sizeof(struct eigens));
     if (eigensArray == NULL)
         errorOccured();
 
-    while(rotations_number < 100){
+    while((rotations_number < 100) && (off >= EPSILON)){
 
         /* find latgest item and it's i,j */
         lar_arr = retrieveLargestIndexes(A_matrix, n);
@@ -307,8 +308,6 @@ struct eigens* jacobiCalc(double** A_matrix, int n, int print, int sort){
 
         /* calc off(A)^2 - off(A')^2 */
         off = offFunc(A_matrix, Atag_matrix, n); 
-        if (off <= EPSILON)
-            break;
 
         /* A = A' */
         copyMatrices(A_matrix, Atag_matrix, n);
@@ -319,6 +318,7 @@ struct eigens* jacobiCalc(double** A_matrix, int n, int print, int sort){
         }
         free(Atag_matrix);
         free(P_matrix);
+        free(lar_arr);
     } 
 
     matrixTranspose(V_matrix, n);
@@ -338,7 +338,7 @@ struct eigens* jacobiCalc(double** A_matrix, int n, int print, int sort){
     }
     free(temp_matrix);
     free(V_matrix);
-    free(lar_arr);
+    
     if (sort == 1)
         qsort(eigensArray, n, sizeof(struct eigens), comparator);
     return eigensArray;
@@ -611,7 +611,7 @@ int* retrieveLargestIndexes(double** A_matrix, int n){
     return indexes;
 }
 
-/* 5 helper functions for createMatrixP */
+/* helper functions for createMatrixP and createMatrixAtag */
 double retrieveTheta(double** A_matrix, int lar_i, int lar_j){
     return (A_matrix[lar_j][lar_j] - A_matrix[lar_i][lar_i])/(2*A_matrix[lar_i][lar_j]);
 }
@@ -632,22 +632,38 @@ int sign(double theta){
     return theta>=0? 1:-1;
 }
 
-double** createMatrixP(double** A_matrix,int n, int lar_i, int lar_j){
-    int i, j;
-    double theta, t, c, s;
-    double** P_matrix;
+double* retrieveMathVars(double** A_matrix, int lar_i, int lar_j){
+    double* variables;
+    double theta, t;
+    
+    variables = (double*)calloc(2, sizeof(double));
+    if (variables == NULL)
+        return NULL;   
+
     if (A_matrix[lar_i][lar_j] == 0){
-        theta=0;
-        t = 0;
-        c = 1;
-        s = 0;
+        variables[0] = 1;
+        variables[1] = 0;
     }
     else{
         theta = retrieveTheta(A_matrix, lar_i, lar_j);
         t = retrieveT(theta);
-        c = retrieveC(t);
-        s = retrieveS(t,c);
+        variables[0]=retrieveC(t);
+        variables[1] = retrieveS(variables[0], t);
     }
+
+    return variables;
+    
+}
+
+double** createMatrixP(double** A_matrix,int n, int lar_i, int lar_j){
+    int i, j;
+    double c, s;
+    double** P_matrix;
+    double* variables;
+
+    variables = retrieveMathVars(A_matrix, lar_i, lar_j);
+    c = variables[0];
+    s = variables[1];
     P_matrix = allocateMem(n, n);
     if (P_matrix == NULL)
         errorOccured();
@@ -663,19 +679,25 @@ double** createMatrixP(double** A_matrix,int n, int lar_i, int lar_j){
     P_matrix[lar_i][lar_j] = s;
     P_matrix[lar_j][lar_i] = -s;
 
+    free(variables);
+
     return P_matrix;
 }
 
 /* calculates A' according to step 6 */
 double** createMatrixAtag(double** A_matrix,int n,int lar_i,int lar_j){
     int i, j;
-    double theta, t, c, s;
+    double c, s;
     double** Atag_matrix;
-    theta = retrieveTheta(A_matrix, lar_i, lar_j);
-    t = retrieveT(theta);
-    c = retrieveC(t);
-    s = retrieveS(t,c);
-    Atag_matrix = allocateMem(n,n);
+    double* variables;
+
+    variables = retrieveMathVars(A_matrix, lar_i, lar_j);
+    c = variables[0];
+    s = variables[1];
+    Atag_matrix = allocateMem(n, n);
+    if (Atag_matrix == NULL)
+        errorOccured();
+
     for (i=0; i<n; i++){
         for (j=0; j<n; j++){
         Atag_matrix[i][j] = A_matrix[i][j];
@@ -694,6 +716,8 @@ double** createMatrixAtag(double** A_matrix,int n,int lar_i,int lar_j){
     Atag_matrix[lar_j][lar_j] = s*s*A_matrix[lar_i][lar_i] + c*c*A_matrix[lar_j][lar_j] + 2*s*c*A_matrix[lar_i][lar_j];
     Atag_matrix[lar_i][lar_j] = 0;
     Atag_matrix[lar_j][lar_i] = 0;
+
+    free(variables);
 
     return Atag_matrix;
 }
