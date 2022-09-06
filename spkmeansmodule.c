@@ -13,12 +13,12 @@ static PyObject* makeListFromMatrix(double** matrix, int n, int k){
 
     lst = PyList_New(0);
     if(!lst)
-        return NULL;
+        errorOccured();
     for(i = 0; i < n; i++){
         row = PyList_New(0);
         if(!row){
             Py_DECREF(lst);
-            return NULL;
+            errorOccured();
         }
         for(j = 0; j < k; j++){
             PyList_Append(row,PyFloat_FromDouble((double)matrix[i][j]));
@@ -52,8 +52,6 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         errorOccured();}
 
     original_matrix = allocateMem(n, vector_length);
-    if (original_matrix == NULL)
-        errorOccured();
     for(i = 0; i < n; i++){
         for (j = 0; j < vector_length ; j++) {
             PyObject* element = PyList_GetItem(py_matrix, (vector_length*i) + j);
@@ -250,7 +248,7 @@ PyMODINIT_FUNC PyInit_spkmeansmodule(void)
     PyObject *m;
     m = PyModule_Create(&_moduledef);
     if(!m){
-        return NULL;
+        errorOccured();
     }
     return m;
 }

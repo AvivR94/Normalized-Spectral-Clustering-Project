@@ -48,14 +48,14 @@ def retrieveProb(distances):
     return prob
 
 # flatten mat is a mat in an array form, for C-API
-def retrieveFlattenMat(mat,r,c):
+def retrieveFlattenMat(mat,rows,columns):
     lst = []
-    for i in range(r):
-        for j in range(c):
+    for i in range(rows):
+        for j in range(columns):
             lst.append(float(mat[i][j]))
     return lst
 
-# print matrices in python by goal
+# print matrices in python
 def printMatrix(mat, rows, columns):
     for i in range(rows):
         for j in range(columns):
@@ -66,20 +66,9 @@ def printMatrix(mat, rows, columns):
     for i in range(rows):
             print(result[i])
 
-def printJacobi(mat, n):
-    for i in range(n+1):
-        for j in range(n):
-            mat[i][j] = '%.4f'%mat[i][j]
-    result = []
-    for i in range(n+1):
-        result.append(",".join(mat[i]))
-    for i in range(n+1):
-            print(result[i])
-
 def printSPK(final_centroids,indexes, k):    
     for i in range(len(indexes)):
         indexes[i] = str(indexes[i])
-
     indexes = ",".join(indexes)
     print(indexes)
     printMatrix(final_centroids, k, k)
@@ -111,7 +100,8 @@ if __name__ == '__main__':
     if ((k==1 or k>=n) and goal=="spk") or k<0: 
         print("Invalid Input!")
         sys.exit()
-
+    
+    # send the input to get the final matrix from C, by the desired goal
     flatten_input = input.flatten().tolist()
     final_mat = spkmm.getMatrixByGoal(k, n, d, flatten_input, goal)
     rows = len(final_mat)
@@ -123,7 +113,7 @@ if __name__ == '__main__':
 
     # jacobi prints the eigenvalues and then the matrix
     if goal == "jacobi":
-        printJacobi(final_mat, n)
+        printMatrix(final_mat, n+1, n)
 
     # spk: T matrix is recieved by C, sent to fit function, Kmeans in C
     if goal == "spk":
