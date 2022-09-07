@@ -214,6 +214,7 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     return laplacian_matrix;
 }
 
+/* D = D^(-0.5) */
 void squareMatrixD(double** d_matrix, int n){
     int i;
 
@@ -222,11 +223,12 @@ void squareMatrixD(double** d_matrix, int n){
     }
 }
 
+/* use of 1.3 The Eigengap Heuristic when input k is 0 */
 int eigengapHeuristic(struct eigens* eigensArray, int n){
     double* deltas;
     int i, argmax_i;
     double max_delta;
-    /*case we need to use 1.3 The Eigengap Heuristic because the input k = 0 */
+    
     deltas = (double*)calloc(n-1, sizeof(double));
     /*Calculating the deltas */
     for (i = 0; i < n - 1; i++)
@@ -257,7 +259,7 @@ void jacobi(double** vectors_matrix, int n){
     free(eigens_arr);
 }
 
-/* print/sort == 1 means to do the operation */
+/* print or sort == 1 means to do the operation */
 struct eigens* jacobiCalc(double** a_matrix, int n, int print, int sort){
     double off;
     int i, lar_i, lar_j, rotations_number;
@@ -333,7 +335,7 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int print, int sort){
     return eigensArray;
 }
 
-/* copy from mat2 to mat1 */
+/* copies from mat2 to mat1 */
 void copyMatrices(double** mat1, double** mat2, int n){
     int i,j;
     for (i=0; i<n; i++){
@@ -343,7 +345,7 @@ void copyMatrices(double** mat1, double** mat2, int n){
     }
 }
 
-/* create the identity matrix */
+/* creates the identity matrix */
 double** createMatrixI(int n){
     double** i_matrix;
     int i;
@@ -355,6 +357,7 @@ double** createMatrixI(int n){
     return i_matrix;
 }
 
+/* mat = mat^T (transposed) */
 void matrixTranspose(double** mat, int n){
     int i, j;
     double** trans_matrix;
@@ -452,7 +455,7 @@ double* copyToEigenVectors(double* vec_matrix, int n){
     return vector;
 }
 
-/* calculates the multiplication of two matrices */
+/* calculates the multiplication of two matrices into result (matrix) */
 void matrixMult(int rows,int columns,double** mat1,double** mat2,double** result){
     int i, j, k;
 
@@ -590,7 +593,7 @@ int* retrieveLargestIndexes(double** a_matrix, int n){
     return indexes;
 }
 
-/* helper functions for createMatrixP and createMatrixAtag */
+/* helper functions for retrieveMathVars */
 double retrieveTheta(double** a_matrix, int lar_i, int lar_j){
     return (a_matrix[lar_j][lar_j] - a_matrix[lar_i][lar_i])/(2*a_matrix[lar_i][lar_j]);
 }
@@ -611,6 +614,7 @@ int sign(double theta){
     return theta>=0? 1:-1;
 }
 
+/* calculates theta, t, c and s, returns c and s */
 double* retrieveMathVars(double** a_matrix, int lar_i, int lar_j){
     double* variables;
     double theta, t;
@@ -620,14 +624,14 @@ double* retrieveMathVars(double** a_matrix, int lar_i, int lar_j){
         errorOccured();   
 
     if (a_matrix[lar_i][lar_j] == 0){
-        variables[0] = 1;
-        variables[1] = 0;
+        variables[0] = 1; /* variables[0] = c */
+        variables[1] = 0; /* variables[1] = s */
     }
     else{
         theta = retrieveTheta(a_matrix, lar_i, lar_j);
         t = retrieveT(theta);
-        variables[0]=retrieveC(t);
-        variables[1] = retrieveS(variables[0], t);
+        variables[0]=retrieveC(t); /* variables[0] = c */
+        variables[1] = retrieveS(variables[0], t); /* variables[1] = s */
     }
 
     return variables;
@@ -699,42 +703,33 @@ double** createMatrixAtag(double** a_matrix,int n,int lar_i,int lar_j){
 
 /* K-means Functions */
 void getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone){
-    int bit;
+    int converge_bit;
     int i;
     int iteration_number;
     int* elements_location;
     int* items_number_clusters;
     double** old_centroids;
 
-    bit = 1; /* bit = 0 means convergence in while loop */
+    converge_bit = 1; 
     iteration_number = 0;
 
     elements_location = (int*)calloc(n, sizeof(int));
     if (!elements_location)
         errorOccured();
-
     items_number_clusters = (int*)calloc(k, sizeof(int));
     if (!items_number_clusters)
         errorOccured();
+    old_centroids = allocateMem(k, d);
 
-    old_centroids = (double**)calloc(k, sizeof(double*));
-    if (!old_centroids)
-        errorOccured();
-
-    for (i=0;i<k;i++){
-        old_centroids[i]=(double*) calloc(d,sizeof(double));
-            if (!old_centroids[i])
-                errorOccured();
-    }
-
-    while (bit==1 && max_iter>iteration_number){
+    /* converge_bit == 0 means convergence -> exit while loop */
+    while (converge_bit==1 && max_iter>iteration_number){
         iteration_number++;
         initClusters(elements_location, items_number_clusters, n, k);
         assignCentroids(elements, centroids, items_number_clusters,elements_location,k,d,n);
         saveCentroids(old_centroids, centroids, k, d);
         resetCentroids(centroids, k, d);
         updateCentroids(centroids,elements,items_number_clusters,elements_location,d,n,k);
-        bit = convergence(old_centroids, centroids, k, d, epsilone);
+        converge_bit = convergence(old_centroids, centroids, k, d, epsilone);
     }
 
     free(elements_location);
@@ -818,18 +813,18 @@ void updateCentroids(double** cntrds,double** ele,int* in_clstrs,int *ele_loc,in
 }
 
 int convergence(double** old_centroids,double** centroids,int k,int d,int eps){
-    int bit;
+    int converge_bit;
     int i, j;
     double sum;
 
-    bit = 0;
+    converge_bit = 0;
     for(i=0; i<k; i++){
         sum = 0.0;
         for (j = 0; j<d; j++)
             sum += pow((old_centroids[i][j] + centroids[i][j]), 2);
         sum = pow(sum, 0.5);
         if (sum >= eps)
-            bit = 1;
+            converge_bit = 1;
     }
-    return bit;
+    return converge_bit;
 }

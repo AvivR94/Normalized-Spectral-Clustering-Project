@@ -97,7 +97,7 @@ if __name__ == '__main__':
     n = input.shape[0]
     d = input.shape[1]
     # check for validity of k input
-    if ((k==1 or k>=n) and goal=="spk") or k<0: 
+    if ((k==1 or k>=n or k<0) and goal=="spk"): 
         print("Invalid Input!")
         sys.exit()
     
@@ -122,10 +122,10 @@ if __name__ == '__main__':
         
         # preparing the matrices for input to C
         initial_centroids = retrieveFlattenMat(centroids, k, k)
-        T_matrix = retrieveFlattenMat(final_mat, n, k)
+        t_matrix = retrieveFlattenMat(final_mat, n, k)
         
         # final centroids received by fit functions 
-        final_centroids = spkmm.fit(k, n, k ,initial_centroids, T_matrix)
+        final_centroids = spkmm.fit(k, n, k ,initial_centroids, t_matrix)
         
         # prints the initial indexes and the final centroids
         printSPK(final_centroids, indexes, k)

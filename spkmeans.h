@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
+/* struct for use in spkmeans.c */
 typedef struct eigens{
     int index;
     double value;
