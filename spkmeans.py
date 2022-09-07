@@ -97,7 +97,7 @@ if __name__ == '__main__':
     n = input.shape[0]
     d = input.shape[1]
     # check for validity of k input
-    if ((k==1 or k>=n or k<0) and goal=="spk"): 
+    if ((k==1 or k<0) and goal=="spk") or k>=n: 
         print("Invalid Input!")
         sys.exit()
     
