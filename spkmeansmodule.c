@@ -99,7 +99,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
 
     else if (strcmp(goal, "jacobi") == 0){
         double** jacobi_matrix;
-        eigens_arr = jacobiCalc(original_matrix, n, 0, 0);
+        eigens_arr = jacobiCalc(original_matrix, n, 0);
         jacobi_matrix = jacobiMatForPrint(eigens_arr, n);
         eigens_list = PyList_New(0);
         if(!eigens_list)
@@ -132,7 +132,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         w_matrix = wamCalc(original_matrix, n, vector_length);
         d_matrix = ddgCalc(w_matrix, n);
         l_matrix = lnormCalc(w_matrix, d_matrix, n);
-        eigens_arr = jacobiCalc(l_matrix, n, 0, 1);
+        eigens_arr = jacobiCalc(l_matrix, n, 1);
         if(k == 0){
             k = eigengapHeuristic(eigens_arr, n);
         } 
