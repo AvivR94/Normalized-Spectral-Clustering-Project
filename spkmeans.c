@@ -177,21 +177,20 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     int i;
     int j;
     double** laplacian_matrix;
-    double** identity_matrix;
+    double** i_matrix;
     double** result_matrix;
     double** temp_matrix;
 
-    /* Laplacian matrix initiallization */
+    /* laplacian matrix initiallization */
     laplacian_matrix = allocateMem(n, n);
     result_matrix = allocateMem(n, n);
     temp_matrix = allocateMem(n, n);
-    
-    identity_matrix = createMatrixI(n);
+    i_matrix = createMatrixI(n);
 
     /* calculate D^(-0.5) */
     minusSqrtMatrixD(d_matrix, n);
 
-    /*calculate D^(-1/2) * W * D^(-1/2):*/
+    /* calculate D^(-1/2) * W * D^(-1/2):*/
     /* temp matrix = D^(-1/2) * W */
     matrixMult(n,n,d_matrix,w_matrix,temp_matrix);
     /* result matrix = (D^(-1/2) * W) * D^(-1/2) */
@@ -200,14 +199,14 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     /*calculate final L_norm */
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
-            laplacian_matrix[i][j]=identity_matrix[i][j] - result_matrix[i][j];
+            laplacian_matrix[i][j]=i_matrix[i][j] - result_matrix[i][j];
 
     for(i = 0; i < n ; i++){
-        free(identity_matrix[i]);
+        free(i_matrix[i]);
         free(result_matrix[i]);
         free(temp_matrix[i]);
     }
-    free(identity_matrix);
+    free(i_matrix);
     free(result_matrix);
     free(temp_matrix);
 
@@ -218,9 +217,8 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
 void minusSqrtMatrixD(double** d_matrix, int n){
     int i;
 
-    for (i = 0; i < n; i++){
+    for (i = 0; i < n; i++)
         d_matrix[i][i] = 1/sqrt(d_matrix[i][i]);
-    }
 }
 
 /* use of 1.3 The Eigengap Heuristic when input k is 0 */
@@ -230,11 +228,13 @@ int eigengapHeuristic(struct eigens* eigensArray, int n){
     double max_delta;
     
     deltas = (double*)calloc(n-1, sizeof(double));
-    /*Calculating the deltas */
+    if (deltas == NULL)
+        errorOccured();
+
     for (i = 0; i < n - 1; i++)
         deltas[i] = fabs(eigensArray[i].value - eigensArray[i+1].value);
     
-    /*k = argmax_i(delta_i), i = 1,...,n/2 */
+    /* k = argmax_i(delta_i), i = 1,...,n/2 */
     max_delta = deltas[0];
     argmax_i = 0;
     for (i = 0; i < (int)(n/2); i++){
@@ -286,7 +286,6 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
         variables = retrieveLargestIndexesCS(a_matrix, n);
         rotations_number++;
         
-        /* receives c and s out from variables indx 2 and 3 */
         p_matrix = createMatrixP(n, variables);  
 
         /* calculate A' according to step 6 */
@@ -396,7 +395,7 @@ int comparator(const void* first, const void* second){
     return 0;
 }
 
-/* for spk in cmodule, creates U and normalizing */
+/* for spk in cmodule, creates U and renormalizing */
 double** createMatrixT(struct eigens* eigensArray, int n, int k){
     int i;
     int j;
@@ -461,7 +460,7 @@ void matrixMult(int rows,int columns,double** mat1,double** mat2,double** result
     }
 }
 
-/* calculates off(A)^2 - off(A')^2*/
+/* calculates off(A)^2 - off(A')^2 */
 double offFunc(double** a_matrix, double** a_tag_matrix, int n){
     double off_a, off_a_tag;
     int i, j;
@@ -516,14 +515,12 @@ void printMatrix(double** matrix, int n, int vec_length){
     
     for(i = 0; i < n; i++){
         for(j = 0; j < vec_length; j++) {
-            if (matrix[i][j] < 0 && matrix[i][j] > -0.00005) {
+            if (matrix[i][j] < 0 && matrix[i][j] > -0.00005)
                 printf("0.0000");
-            } else {
+            else
                 printf("%.4f", matrix[i][j]);
-            }
-            if(j != vec_length - 1){
+            if(j != vec_length - 1)
                 printf(",");
-            }
         }
         printf("\n");
     }
@@ -588,7 +585,7 @@ double* retrieveLargestIndexesCS(double** a_matrix, int n){
         ret_arr[2] = 1; /* ret_arr[2] = c */
         ret_arr[3] = 0; /* ret_arr[3] = s */
     }
-    else{
+    else {
         theta = retrieveTheta(a_matrix, lar_i, lar_j);
         t = retrieveT(theta);
         ret_arr[2]=retrieveC(t); /* ret_arr[2] = c */
