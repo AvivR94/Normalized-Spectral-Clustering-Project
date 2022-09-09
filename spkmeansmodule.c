@@ -49,7 +49,8 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     double** t_matrix;
     struct eigens* eigens_arr;
     if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vector_length, &py_matrix, &goal)){
-        errorOccured();}
+        errorOccured();
+    }
 
     original_matrix = allocateMem(n, vector_length);
     for(i = 0; i < n; i++){
@@ -64,9 +65,8 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     if(strcmp(goal, "wam") == 0){
         w_matrix = wamCalc(original_matrix, n, vector_length);
         final_mat = makeListFromMatrix(w_matrix, n, n);
-        for(i = 0; i < n ; i++){
+        for(i = 0; i < n ; i++)
             free(w_matrix[i]);
-        }
         free(w_matrix);
     }
 
@@ -133,9 +133,8 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         d_matrix = ddgCalc(w_matrix, n);
         l_matrix = lnormCalc(w_matrix, d_matrix, n);
         eigens_arr = jacobiCalc(l_matrix, n, 1);
-        if(k == 0){
+        if(k == 0)
             k = eigengapHeuristic(eigens_arr, n);
-        } 
         t_matrix = createMatrixT(eigens_arr, n, k);
         final_mat = makeListFromMatrix(t_matrix, n, k);
         for(i = 0; i < n ; i++){
@@ -152,9 +151,8 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         free(t_matrix);
     }
 
-    for(i=0; i<n; i++) {
+    for(i=0; i<n; i++)
         free(original_matrix[i]);
-    }
     free(original_matrix);
     return Py_BuildValue("O", final_mat);
 }
@@ -169,25 +167,16 @@ static PyObject* fit(PyObject *self, PyObject *args){
     PyObject *centroids_arr;
     PyObject *py_centroids;
     PyObject *py_vectors;
-    int n, k, d; 
+    int n, k, d, max_iter; 
     int i, j;
     double** elements;
     double** centroids;
 
-    if (!PyArg_ParseTuple(args, "iiiOO", &k, &n, &d, &py_centroids, &py_vectors)){
+    if (!PyArg_ParseTuple(args, "iiiiOO", &k, &n, &d, &max_iter, &py_centroids, &py_vectors)){
         errorOccured();
     }
 
-    elements = (double**)calloc(n, sizeof(double*));
-    if (!elements)
-        errorOccured();
-
-    for (i=0;i<n;i++){
-        elements[i]=(double*) calloc(d,sizeof(double));
-        if (!elements[i])
-            errorOccured();
-    }
-
+    elements = allocateMem(n, d);
     for (i = 0; i < n; i++){
         for (j = 0; j < d; j++){
             element = PyList_GetItem(py_vectors, i * d + j);
@@ -195,16 +184,7 @@ static PyObject* fit(PyObject *self, PyObject *args){
         }
     }
 
-    centroids = (double**)calloc(k, sizeof(double*));
-    if (!centroids)
-        errorOccured();
-
-    for (i=0;i<k;i++){
-        centroids[i]=(double*) calloc(d,sizeof(double));
-        if (!centroids[i])
-            errorOccured();
-    }
-
+    centroids = allocateMem(k, d);
      for (i = 0; i < k; i++) {
         for (j = 0; j < d; j++) {
             element = PyList_GetItem(py_centroids, i * d + j);
@@ -212,7 +192,7 @@ static PyObject* fit(PyObject *self, PyObject *args){
         }
     }
 
-    getFinalCentroids(centroids, elements, k, d, n, 300, 0);
+    getFinalCentroids(centroids, elements, k, d, n, max_iter, 0);
     centroids_arr = makeListFromMatrix(centroids,k,k);
 
     for(i=0; i<n; i++)

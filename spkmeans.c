@@ -181,7 +181,6 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     double** result_matrix;
     double** temp_matrix;
 
-    /* laplacian matrix initiallization */
     laplacian_matrix = allocateMem(n, n);
     result_matrix = allocateMem(n, n);
     temp_matrix = allocateMem(n, n);
@@ -189,8 +188,8 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
 
     /* calculate D^(-0.5) */
     minusSqrtMatrixD(d_matrix, n);
-
-    /* calculate D^(-1/2) * W * D^(-1/2):*/
+    
+    /* calculation of D^(-1/2) * W * D^(-1/2): */
     /* temp matrix = D^(-1/2) * W */
     matrixMult(n,n,d_matrix,w_matrix,temp_matrix);
     /* result matrix = (D^(-1/2) * W) * D^(-1/2) */

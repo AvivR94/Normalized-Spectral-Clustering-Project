@@ -125,7 +125,7 @@ if __name__ == '__main__':
         t_matrix = retrieveFlattenMat(final_mat, n, k)
         
         # final centroids received by fit functions 
-        final_centroids = spkmm.fit(k, n, k ,initial_centroids, t_matrix)
+        final_centroids = spkmm.fit(k, n, k, max_iter ,initial_centroids, t_matrix)
         
         # prints the initial indexes and the final centroids
         printSPK(final_centroids, indexes, k)
