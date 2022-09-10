@@ -1,4 +1,4 @@
-# Normalized Spectral Clustering Project
+# Normalized Spectral Clustering Algorithm
 Brief: Clustering algorithm with other functions (Laplacian Norm, Jacobi algorithm - Eigenvalues and Eigenvectors extractor, etc)
 
 2022, Software Project Course
