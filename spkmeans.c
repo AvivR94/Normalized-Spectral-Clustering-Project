@@ -198,7 +198,7 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     /*calculate final L_norm */
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
-            laplacian_matrix[i][j]=i_matrix[i][j] - result_matrix[i][j];
+            laplacian_matrix[i][j] = i_matrix[i][j] - result_matrix[i][j];
 
     for(i = 0; i < n ; i++){
         free(i_matrix[i]);
@@ -351,7 +351,7 @@ double** createMatrixI(int n){
 
     i_matrix = allocateMem(n,n);
     for (i=0; i<n; i++)
-        i_matrix[i][i]=1;
+        i_matrix[i][i] = 1;
 
     return i_matrix;
 }
@@ -560,9 +560,9 @@ void errorOccured(){
 ** and calculates theta, t, c and s, returns largest i&j, c&s */
 double* retrieveLargestIndexesCS(double** a_matrix, int n){
     double largest;
-    int i, j;
+    int i, j, lar_i, lar_j;
     double* ret_arr;
-    double lar_i, lar_j, theta, t;
+    double theta, t;
 
     lar_i = 0;
     lar_j= 1;
@@ -576,22 +576,22 @@ double* retrieveLargestIndexesCS(double** a_matrix, int n){
             if (fabs(a_matrix[i][j]) > fabs(largest)){
                 /* 3. find the Pivot A_ij */
                 largest = fabs(a_matrix[i][j]);
-                lar_i = (double)i;
-                lar_j = (double)j;
+                lar_i = i;
+                lar_j = j;
             }
         }
     }
-    ret_arr[0] = lar_i;
-    ret_arr[1] = lar_j;
+    ret_arr[0] = (double)lar_i;
+    ret_arr[1] = (double)lar_j;
 
-    if (a_matrix[(int)lar_i][(int)lar_j] == 0){
+    if (a_matrix[lar_i][lar_j] == 0){
         ret_arr[2] = 1; /* ret_arr[2] = c */
         ret_arr[3] = 0; /* ret_arr[3] = s */
     }
     else {
         theta = retrieveTheta(a_matrix, lar_i, lar_j);
         t = retrieveT(theta);
-        ret_arr[2]=retrieveC(t); /* ret_arr[2] = c */
+        ret_arr[2] = retrieveC(t); /* ret_arr[2] = c */
         ret_arr[3] = retrieveS(ret_arr[2], t); /* ret_arr[3] = s */
     }
     return ret_arr;
@@ -660,7 +660,7 @@ void updateMatrixAtag(double** a_tag_mat,double** a_mat,int n,double* variables)
 }
 
 /* K-means Functions */
-void getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone){
+void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,int max_iter,double eps){
     int converge_bit;
     int i;
     int iteration_number;
@@ -687,7 +687,7 @@ void getFinalCentroids(double **centroids, double **elements, int k, int d, int 
         saveCentroids(old_centroids, centroids, k, d);
         resetCentroids(centroids, k, d);
         updateCentroids(centroids,elements,items_number_clusters,elements_location,d,n,k);
-        converge_bit = convergence(old_centroids, centroids, k, d, epsilone);
+        converge_bit = convergence(old_centroids, centroids, k, d, eps);
     }
 
     free(elements_location);
@@ -780,7 +780,7 @@ int convergence(double** old_centroids,double** centroids,int k,int d,int eps){
         sum = 0.0;
         for (j = 0; j<d; j++)
             sum += pow((old_centroids[i][j] + centroids[i][j]), 2);
-        sum = pow(sum, 0.5);
+        sum = sqrt(sum);
         if (sum >= eps)
             converge_bit = 1;
     }

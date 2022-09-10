@@ -41,7 +41,7 @@ double retrieveS(double t, double c);
 int sign(double theta);
 double** createMatrixP(int n, double* variables);
 void updateMatrixAtag(double** a_tag_mat,double** a_mat,int n,double* variables);
-void getFinalCentroids(double **centroids, double **elements, int k, int d, int n, int max_iter, double epsilone);
+void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,int max_iter,double eps);
 void resetCentroids(double** centroids,int k, int d);
 void initClusters(int* elements_loc, int* items_number_clusters, int n, int k);
 void saveCentroids(double** old_centroids, double** centroids, int k, int d);

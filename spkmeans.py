@@ -107,16 +107,12 @@ if __name__ == '__main__':
     rows = len(final_mat)
     columns = len(final_mat[0])
 
-    # if goal is not jacobi or spk, print the matrix from C as is
-    if goal in {"wam", "ddg", "lnorm"}:
+    # if goal is not spk, print the matrix from C as is
+    if goal != "spk":
         printMatrix(final_mat, rows, columns)
 
-    # jacobi prints the eigenvalues and then the matrix
-    if goal == "jacobi":
-        printMatrix(final_mat, n+1, n)
-
     # spk: T matrix is recieved by C, sent to fit function, Kmeans in C
-    if goal == "spk":
+    else:
         k = len(final_mat[0])
         centroids, indexes = initializeCentroids(final_mat, k, n)
         
