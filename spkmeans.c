@@ -221,7 +221,7 @@ void minusSqrtMatrixD(double** d_matrix, int n){
 }
 
 /* use of 1.3 The Eigengap Heuristic when input k is 0 */
-int eigengapHeuristic(struct eigens* eigensArray, int n){
+int eigengapHeuristic(struct eigens* eigens_arr, int n){
     double* deltas;
     int i, argmax_i;
     double max_delta;
@@ -231,7 +231,7 @@ int eigengapHeuristic(struct eigens* eigensArray, int n){
         errorOccured();
 
     for (i = 0; i < n - 1; i++)
-        deltas[i] = fabs(eigensArray[i].value - eigensArray[i+1].value);
+        deltas[i] = fabs(eigens_arr[i].value - eigens_arr[i+1].value);
     
     /* k = argmax_i(delta_i), i = 1,...,n/2 */
     max_delta = deltas[0];
@@ -267,15 +267,15 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
     double** a_tag_matrix;
     double** v_matrix;
     double** temp_matrix;
-    struct eigens* eigensArray;
+    struct eigens* eigens_arr;
     double* variables;
 
     rotations_number = 0;
     off = 1;
     temp_matrix = allocateMem(n,n);
     v_matrix = createMatrixI(n);
-    eigensArray = (eigens*) calloc(n, sizeof(struct eigens));
-    if (eigensArray == NULL)
+    eigens_arr = (eigens*) calloc(n, sizeof(struct eigens));
+    if (eigens_arr == NULL)
         errorOccured();
     a_tag_matrix = allocateMem(n,n);
 
@@ -308,12 +308,13 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
         free(variables);
     } 
 
-    matrixTranspose(v_matrix, n);
+    /* transpose for eigenvectors in rows, easier to work with */
+    matrixTranspose(v_matrix, n); 
 
     for(i = 0; i < n; i++){
-        eigensArray[i].index = i;
-        eigensArray[i].value = a_matrix[i][i];
-        eigensArray[i].vector = copyToEigenVectors(v_matrix[i], n);
+        eigens_arr[i].index = i;
+        eigens_arr[i].value = a_matrix[i][i];
+        eigens_arr[i].vector = copyToEigenVectors(v_matrix[i], n);
     }
 
 
@@ -326,9 +327,10 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
     free(temp_matrix);
     free(v_matrix);
     
-    if (sort == 1)
-        qsort(eigensArray, n, sizeof(struct eigens), comparator);
-    return eigensArray;
+    if (sort == 1) /* for spk goal, sort in a decreasing order */
+        qsort(eigens_arr, n, sizeof(struct eigens), comparator);
+
+    return eigens_arr;
 }
 
 /* copies from mat2 to mat1 */
@@ -377,7 +379,7 @@ void matrixTranspose(double** mat, int n){
     free(trans_matrix);
 }
 
-/* comparator func to sort a list of eigens from largest to smallest */
+/* comparator func to sort eigenvalues in a decreasing order */
 int comparator(const void* first, const void* second){
     struct eigens* e1;
     struct eigens* e2; 
@@ -395,7 +397,7 @@ int comparator(const void* first, const void* second){
 }
 
 /* for spk in cmodule, creates U and renormalizing */
-double** createMatrixT(struct eigens* eigensArray, int n, int k){
+double** createMatrixT(struct eigens* eigens_arr, int n, int k){
     int i;
     int j;
     double sum;
@@ -407,14 +409,14 @@ double** createMatrixT(struct eigens* eigensArray, int n, int k){
 
     for(i = 0; i < k; i++){
         for(j = 0; j < n; j++){
-             u_matrix[j][i] = eigensArray[i].vector[j];
+             u_matrix[j][i] = eigens_arr[i].vector[j];
         }
     }
 
     for(i = 0; i < n; i++){
         sum = 0;
         for(j = 0; j < k; j++)
-            sum += u_matrix[i][j] * u_matrix[i][j];
+            sum += pow(u_matrix[i][j], 2);
         sum = sqrt(sum);
 
         for(j = 0; j < k; j++){
@@ -477,33 +479,34 @@ double offFunc(double** a_matrix, double** a_tag_matrix, int n){
     return (off_a - off_a_tag);
 }
 
-double** jacobiMatForPrint(struct eigens* eigensArray, int n){
+double** jacobiMatForPrint(struct eigens* eigens_arr, int n){
     double** jacobi_matrix;
     int i, j;
 
     jacobi_matrix = allocateMem(n, n);
     for(i = 0; i < n; i++){
         for(j = 0; j < n; j++)
-            jacobi_matrix[j][i] = eigensArray[i].vector[j];
+            jacobi_matrix[j][i] = eigens_arr[i].vector[j];
     }
     return jacobi_matrix;
 }
 
-void printJacobi(struct eigens* eigensArray, int n){
+void printJacobi(struct eigens* eigens_arr, int n){
     int i;
     double** jacobi_matrix;
 
     for (i = 0; i < n; i++){
-         if(eigensArray[i].value < 0 && eigensArray[i].value > -0.00005)
+         if(eigens_arr[i].value < 0 && eigens_arr[i].value > -0.00005)
             printf("0.0000");
         else
-            printf("%.4f", eigensArray[i].value);
+            printf("%.4f", eigens_arr[i].value);
         if(i != n - 1)
             printf(",");
     }
     printf("\n");
-    jacobi_matrix = jacobiMatForPrint(eigensArray, n);
+    jacobi_matrix = jacobiMatForPrint(eigens_arr, n);
     printMatrix(jacobi_matrix, n, n);
+
     for(i=0; i < n; i++)
         free(jacobi_matrix[i]);
     free(jacobi_matrix);
@@ -719,7 +722,7 @@ void saveCentroids(double** old_centroids, double** centroids, int k, int d){
         }
 }
 
-void assignCentroids(double **ele,double **cntrds,int* in_clstrs,int* ele_loc,int k,int d,int n){
+void assignCentroids(double** ele,double** cntrds,int* in_clstrs,int* ele_loc,int k,int d,int n){
     int i, j, l;
     double sum=0.0;
     double min;
@@ -733,7 +736,7 @@ void assignCentroids(double **ele,double **cntrds,int* in_clstrs,int* ele_loc,in
             sum = 0.0;
                 for (l = 0; l < d; l++)
                     sum += pow((ele[i][l] - cntrds[j][l]),2);
-            sum = pow(sum,0.5);
+            sum = sqrt(sum);
             if (flag == 0){
                 min = sum;
                 flag = 1;
