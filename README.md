@@ -1,6 +1,8 @@
 # SP-Project
 Brief: Clustering algorithm with other functions (Laplacian Norm, Jacobi algorithm - Eigenvalues and Eigenvectors extractor, etc)
+
 2022, Software Project Course
+
 Tel Aviv University
 
 •	Developing an algorithm which groups datapoints that are retrieved from matrices into clusters by using centroids (mean value of the datapoints in the cluster) for each cluster.
