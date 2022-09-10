@@ -278,6 +278,7 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
     if (eigens_arr == NULL)
         errorOccured();
     a_tag_matrix = allocateMem(n,n);
+    copyMatrices(a_tag_matrix, a_matrix, n); /* initialize a_tag */ 
 
     while((rotations_number < 100) && (off >= EPSILON)){
 
@@ -644,7 +645,6 @@ void updateMatrixAtag(double** a_tag_mat,double** a_mat,int n,double* variables)
     c = variables[2];
     s = variables[3];
 
-    copyMatrices(a_tag_mat, a_mat, n);
     for(i=0; i<n; i++){
         if((i != lar_i) || (i != lar_j)){
                 a_tag_mat[i][lar_i] = c*a_mat[i][lar_i] - s*a_mat[i][lar_j];
