@@ -5,7 +5,7 @@ Brief: Clustering algorithm with other functions (Laplacian Norm, Jacobi algorit
 
 Tel Aviv University
 
-•	Developing an algorithm which groups datapoints that are retrieved from matrices into clusters by using centroids (mean value of the datapoints in the cluster) for each cluster.
+•	An algorithm which groups datapoints that are retrieved from matrices into clusters by using centroids (mean value of the datapoints in the cluster) for each cluster.
 
 •	The main algorithm uses mathematical algorithms: creation of adjacency matrix, diagonalization to find eigenvectors, arranging the eigenvectors in a matrix as columns and renormalizing. A clustering algorithm (K-means) runs on the last matrix. The algorithm adjusts the centroids each iteration and repeats itself until convergence.
 
