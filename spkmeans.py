@@ -90,7 +90,7 @@ if __name__ == '__main__':
             sys.exit()
         # read the input file
         input = np.loadtxt(sys.argv[3], delimiter=',')
-    except ValueError:
+    except:
         print("Invalid Input!")
         sys.exit()
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     # spk: T matrix is recieved by C, sent to fit function, Kmeans in C
     else:
-        k = len(final_mat[0])
+        k = columns
         centroids, indexes = initializeCentroids(final_mat, k, n)
         
         # preparing the matrices for input to C
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         t_matrix = retrieveFlattenMat(final_mat, n, k)
         
         # final centroids received by fit functions 
-        final_centroids = spkmm.fit(k, n, k, max_iter ,initial_centroids, t_matrix)
+        final_centroids = spkmm.fit(k, n, k, max_iter, initial_centroids, t_matrix)
         
         # prints the initial indexes and the final centroids
         printSPK(final_centroids, indexes, k)
