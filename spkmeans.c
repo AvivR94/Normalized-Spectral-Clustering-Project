@@ -75,21 +75,16 @@ int main(int argc, char* argv[]){
             jacobi(vectors_matrix, n);
         }
         
-    for(i=0; i<n; i++)
-        free(vectors_matrix[i]);
-    free(vectors_matrix);
+    freeMatrix(vectors_matrix, n);
 
     return 0;
 }
 
 void wam(double** vectors_matrix, int n, int vec_length){
-    int i;
     double** w_matrix;
     w_matrix = wamCalc(vectors_matrix, n, vec_length);
     printMatrix(w_matrix, n, n);
-    for(i = 0; i < n; i++)
-        free(w_matrix[i]);
-    free(w_matrix);
+    freeMatrix(w_matrix, n);
 }
 
 double** wamCalc(double** vectors_matrix, int n, int vec_length){
@@ -119,18 +114,13 @@ double** wamCalc(double** vectors_matrix, int n, int vec_length){
 void ddg(double** vectors_matrix, int n, int vec_length){
     double** w_matrix;
     double** d_matrix;
-    int i;
+
     w_matrix = wamCalc(vectors_matrix, n, vec_length);
     d_matrix = ddgCalc(w_matrix, n);
-
     printMatrix(d_matrix, n, n);
 
-    for(i = 0; i < n ; i++){
-        free(w_matrix[i]);
-        free(d_matrix[i]);
-    }
-    free(w_matrix);
-    free(d_matrix);
+    freeMatrix(w_matrix, n);
+    freeMatrix(d_matrix, n);
 }
 
 double** ddgCalc(double** w_matrix, int n){
@@ -153,24 +143,18 @@ double** ddgCalc(double** w_matrix, int n){
 }
         
 void lnorm(double** vectors_matrix, int n, int vec_length){
-    int i;
     double** d_matrix;
     double** w_matrix;
     double** lnorm_matrix;
+
     w_matrix = wamCalc(vectors_matrix, n, vec_length);
     d_matrix = ddgCalc(w_matrix, n);
     lnorm_matrix = lnormCalc(w_matrix, d_matrix, n);
-
     printMatrix(lnorm_matrix, n, n);
 
-    for(i = 0; i < n; i++){
-        free(w_matrix[i]);
-        free(d_matrix[i]);
-        free(lnorm_matrix[i]);
-    }
-    free(w_matrix);
-    free(d_matrix);
-    free(lnorm_matrix);
+    freeMatrix(w_matrix, n);
+    freeMatrix(d_matrix, n);
+    freeMatrix(lnorm_matrix, n);
 }
 
 double** lnormCalc(double** w_matrix, double** d_matrix, int n){
@@ -200,14 +184,9 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
         for (j = 0; j < n; j++)
             laplacian_matrix[i][j] = i_matrix[i][j] - result_matrix[i][j];
 
-    for(i = 0; i < n ; i++){
-        free(i_matrix[i]);
-        free(result_matrix[i]);
-        free(temp_matrix[i]);
-    }
-    free(i_matrix);
-    free(result_matrix);
-    free(temp_matrix);
+    freeMatrix(i_matrix, n);
+    freeMatrix(result_matrix, n);
+    freeMatrix(temp_matrix, n);
 
     return laplacian_matrix;
 }
@@ -303,9 +282,7 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
         /* A = A' */
         copyMatrices(a_matrix, a_tag_matrix, n);
 
-        for(i = 0; i < n ; i++)
-            free(p_matrix[i]);
-        free(p_matrix);
+        freeMatrix(p_matrix, n);
         free(variables);
     } 
 
@@ -318,15 +295,9 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
         eigens_arr[i].vector = copyToEigenVectors(v_matrix[i], n);
     }
 
-
-    for(i = 0; i < n ; i++){
-        free(a_tag_matrix[i]);
-        free(temp_matrix[i]);
-        free(v_matrix[i]);
-    }
-    free(a_tag_matrix);
-    free(temp_matrix);
-    free(v_matrix);
+    freeMatrix(a_tag_matrix, n);
+    freeMatrix(temp_matrix, n);
+    freeMatrix(v_matrix, n);
     
     if (sort == 1) /* for spk goal, sort in a decreasing order */
         qsort(eigens_arr, n, sizeof(struct eigens), comparator);
@@ -374,10 +345,7 @@ void matrixTranspose(double** mat, int n){
         }
     }
     
-    for(i = 0; i < n ; i++){
-        free(trans_matrix[i]);
-    }
-    free(trans_matrix);
+    freeMatrix(trans_matrix, n);
 }
 
 /* comparator func to sort eigenvalues in a decreasing order */
@@ -397,6 +365,14 @@ int comparator(const void* first, const void* second){
     return 0;
 }
 
+/* frees memory for 2D arrays */
+void freeMatrix(double** matrix, int n){
+    int i;
+
+    for(i=0; i < n; i++)
+        free(matrix[i]);
+    free(matrix);
+}
 /* for spk in cmodule, creates U and renormalizing */
 double** createMatrixT(struct eigens* eigens_arr, int n, int k){
     int i;
@@ -428,9 +404,7 @@ double** createMatrixT(struct eigens* eigens_arr, int n, int k){
         }
     }
 
-    for(i=0; i<n; i++)
-        free(u_matrix[i]);
-    free(u_matrix);
+    freeMatrix(u_matrix, n);
 
     return t_matrix;
 }
@@ -508,9 +482,7 @@ void printJacobi(struct eigens* eigens_arr, int n){
     jacobi_matrix = jacobiMatForPrint(eigens_arr, n);
     printMatrix(jacobi_matrix, n, n);
 
-    for(i=0; i < n; i++)
-        free(jacobi_matrix[i]);
-    free(jacobi_matrix);
+    freeMatrix(jacobi_matrix, n);
 }
 
 void printMatrix(double** matrix, int n, int vec_length){
@@ -532,7 +504,6 @@ void printMatrix(double** matrix, int n, int vec_length){
 /* allocates memory for a matrix */
 double** allocateMem(int n, int vec_length){ 
     int i;
-    int j;
     double** matrix;
 
     matrix = (double **)calloc(n, sizeof(double *));
@@ -542,9 +513,7 @@ double** allocateMem(int n, int vec_length){
     for (i = 0; i < n; i++){
         matrix[i] = (double *)calloc(vec_length, sizeof(double));
         if (matrix[i] == NULL){
-            for (j = 0; j < i; j++)
-                free(matrix[j]);
-            free(matrix); 
+            freeMatrix(matrix, i); 
             errorOccured();
         }
     }
@@ -662,7 +631,6 @@ void updateMatrixAtag(double** a_tag_mat,double** a_mat,int n,double* variables)
 /* K-means Functions */
 void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,int max_iter,double eps){
     int converge_bit;
-    int i;
     int iteration_number;
     int* elements_location;
     int* items_number_clusters;
@@ -692,14 +660,12 @@ void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,in
 
     free(elements_location);
     free(items_number_clusters);
-    for(i=0; i<k; i++)
-        free(old_centroids[i]);
-    free(old_centroids);
+    freeMatrix(old_centroids, k);
 }
 
 void resetCentroids(double** centroids,int k, int d){
-    int i;
-    int j;
+    int i,j;
+
     for (i=0;i<k;i++)
         for(j=0;j<d;j++)
             centroids[i][j]=0.0;                
@@ -707,6 +673,7 @@ void resetCentroids(double** centroids,int k, int d){
 
 void initClusters(int* elements_loc, int* items_number_clusters, int n, int k){
     int i;
+
     for (i=0;i<n;i++)
         elements_loc[i]=0;
     for (i=0;i<k;i++)
@@ -714,8 +681,8 @@ void initClusters(int* elements_loc, int* items_number_clusters, int n, int k){
 }
 
 void saveCentroids(double** old_centroids, double** centroids, int k, int d){
-    int i;
-    int j;
+    int i,j;
+
     for (i=0;i<k;i++){
             for (j=0;j<d;j++)
                 old_centroids[i][j] = centroids[i][j];

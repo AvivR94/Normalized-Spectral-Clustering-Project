@@ -24,6 +24,7 @@ void copyMatrices(double** mat1, double** mat2, int n);
 double** createMatrixI(int n);
 void matrixTranspose(double** mat, int n);
 int comparator (const void* first, const void* second);
+void freeMatrix(double** matrix, int n);
 double** createMatrixT(struct eigens* eigens_arr, int n, int k);
 double* copyToEigenVectors(double* vec_matrix, int n);
 void matrixMult(int rows, int columns, double** mat1, double** mat2, double** result);
