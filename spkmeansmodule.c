@@ -5,15 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* helper function */
-static PyObject* makeListFromMatrix(double** matrix, int n, int k){
+/* helper function - saves the output into lst */
+static void makeListFromMatrix(PyObject* lst,double** matrix,int n,int k){
     int i, j;
-    PyObject *lst;
-    PyObject *row;
+    PyObject* row;
 
-    lst = PyList_New(0);
-    if(!lst)
-        errorOccured();
     for(i = 0; i < n; i++){
         row = PyList_New(0);
         if(!row){
@@ -40,7 +36,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     PyObject *row;
     PyObject *element;
     int n, k, i, j;
-    int vector_length;
+    int vec_length;
     char* goal;
     double** original_matrix;
     double** w_matrix;
@@ -48,32 +44,34 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     double** l_matrix;
     double** t_matrix;
     struct eigens* eigens_arr;
-    if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vector_length, &py_matrix, &goal)){
+    if (!PyArg_ParseTuple(args, "iiiOs",&k, &n, &vec_length, &py_matrix, &goal)){
         errorOccured();
     }
 
-    original_matrix = allocateMem(n, vector_length);
+    original_matrix = allocateMem(n, vec_length);
     for(i = 0; i < n; i++){
-        for (j = 0; j < vector_length ; j++) {
-            PyObject* element = PyList_GetItem(py_matrix, (vector_length*i) + j);
+        for (j = 0; j < vec_length ; j++) {
+            PyObject* element = PyList_GetItem(py_matrix, (vec_length*i) + j);
             original_matrix[i][j] = PyFloat_AsDouble(element);
         }
     }
     final_mat = PyList_New(0);
+    if(!final_mat)
+        errorOccured();
     
     /* choose which goal to perform */
     if(strcmp(goal, "wam") == 0){
-        w_matrix = wamCalc(original_matrix, n, vector_length);
-        final_mat = makeListFromMatrix(w_matrix, n, n);
+        w_matrix = wamCalc(original_matrix, n, vec_length);
+        makeListFromMatrix(final_mat, w_matrix, n, n);
         for(i = 0; i < n ; i++)
             free(w_matrix[i]);
         free(w_matrix);
     }
 
     else if (strcmp(goal, "ddg") == 0){
-        w_matrix = wamCalc(original_matrix, n, vector_length);
+        w_matrix = wamCalc(original_matrix, n, vec_length);
         d_matrix = ddgCalc(w_matrix, n);
-        final_mat = makeListFromMatrix(d_matrix, n, n);
+        makeListFromMatrix(final_mat, d_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
@@ -83,10 +81,10 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     }
 
     else if (strcmp(goal, "lnorm") == 0){
-        w_matrix = wamCalc(original_matrix, n, vector_length);
+        w_matrix = wamCalc(original_matrix, n, vec_length);
         d_matrix = ddgCalc(w_matrix, n);
         l_matrix = lnormCalc(w_matrix, d_matrix, n);
-        final_mat = makeListFromMatrix(l_matrix, n, n);
+        makeListFromMatrix(final_mat, l_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
@@ -108,17 +106,7 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
             PyList_Append(eigens_list, PyFloat_FromDouble((double)eigens_arr[i].value));
         }
         PyList_Append(final_mat, eigens_list);
-        for(i = 0; i < n; i++){
-            row = PyList_New(0);
-            if(!row){
-                Py_DECREF(final_mat);
-                errorOccured();
-            }
-            for(j = 0; j < n; j++){
-                PyList_Append(row,PyFloat_FromDouble((double)jacobi_matrix[i][j]));
-            }
-            PyList_Append(final_mat, row);
-        }
+        makeListFromMatrix(final_mat, jacobi_matrix, n, n);
         for(i = 0; i < n ; i++){
             free(eigens_arr[i].vector);
             free(jacobi_matrix[i]);
@@ -129,14 +117,14 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
     }
 
     else if (strcmp(goal, "spk") == 0){
-        w_matrix = wamCalc(original_matrix, n, vector_length);
+        w_matrix = wamCalc(original_matrix, n, vec_length);
         d_matrix = ddgCalc(w_matrix, n);
         l_matrix = lnormCalc(w_matrix, d_matrix, n);
         eigens_arr = jacobiCalc(l_matrix, n, 1);
         if(k == 0)
             k = eigengapHeuristic(eigens_arr, n);
         t_matrix = createMatrixT(eigens_arr, n, k);
-        final_mat = makeListFromMatrix(t_matrix, n, k);
+        makeListFromMatrix(final_mat, t_matrix, n, k);
         for(i = 0; i < n ; i++){
             free(w_matrix[i]);
             free(d_matrix[i]);
@@ -193,7 +181,10 @@ static PyObject* fit(PyObject *self, PyObject *args){
     }
 
     getFinalCentroids(centroids, elements, k, d, n, max_iter, 0);
-    centroids_arr = makeListFromMatrix(centroids,k,k);
+    centroids_arr = PyList_New(0);
+    if(!centroids_arr)
+        errorOccured();
+    makeListFromMatrix(centroids_arr, centroids, k, k);
 
     for(i=0; i<n; i++)
         free(elements[i]);
