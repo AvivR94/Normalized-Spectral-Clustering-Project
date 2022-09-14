@@ -91,19 +91,15 @@ double** wamCalc(double** vectors_matrix, int n, int vec_length){
     int s;
     double sum;
     double** w_matrix;
-
     w_matrix = allocateMem(n, n);
 
-    /* calculating the values in each cell */
-    for (i = 0; i < n; i++)
-        w_matrix[i][i] = 0; /* the diagonal line in matrix's values are 0 */
     for (i = 0; i < n; i++){
         for (j= i + 1; j < n; j++){
             sum = 0;
             for (s = 0; s < vec_length; s++)
                 sum += pow((vectors_matrix[i][s] - vectors_matrix[j][s]),2);
             w_matrix[i][j] = exp((-1)*(sqrt(sum)/2));
-            w_matrix[j][i] = exp((-1)*(sqrt(sum)/2));
+            w_matrix[j][i] = exp((-1)*(sqrt(sum)/2)); /* w_matrix is symetric */
         }
     }
     return w_matrix;
@@ -124,8 +120,8 @@ void ddg(double** vectors_matrix, int n, int vec_length){
 double** ddgCalc(double** w_matrix, int n){
     double** d_matrix;
     int i,j;
-
     d_matrix = allocateMem(n, n);
+
     /* the sum of each row goes in the diagonal line of d_matrix */
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++)
@@ -157,7 +153,6 @@ double** lnormCalc(double** w_matrix, double** d_matrix, int n){
     double** i_matrix;
     double** result_matrix;
     double** temp_matrix;
-
     laplacian_matrix = allocateMem(n, n);
     result_matrix = allocateMem(n, n);
     temp_matrix = allocateMem(n, n);
@@ -197,14 +192,13 @@ int eigengapHeuristic(struct eigens* eigens_arr, int n){
     double* deltas;
     int i, argmax_i;
     double max_delta;
-    
     deltas = (double*)calloc(n-1, sizeof(double));
     if (deltas == NULL)
         errorOccured();
 
     for (i = 0; i < n - 1; i++)
         deltas[i] = fabs(eigens_arr[i].value - eigens_arr[i+1].value);
-    
+        
     /* k = argmax_i(delta_i), i = 1,...,n/2 */
     max_delta = deltas[0];
     argmax_i = 0;
@@ -214,7 +208,7 @@ int eigengapHeuristic(struct eigens* eigens_arr, int n){
             argmax_i = i;
         }
     }
-    
+
     free(deltas);
     return (argmax_i+1);
 }
@@ -241,9 +235,8 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
     double** temp_matrix;
     struct eigens* eigens_arr;
     double* variables;
-
     rotations_number = 0;
-    off = 1;
+    off = 1; /* initialize off, guaranteed first iteration */
     temp_matrix = allocateMem(n,n);
     v_matrix = createMatrixI(n);
     eigens_arr = (eigens*) calloc(n, sizeof(struct eigens));
@@ -301,6 +294,7 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
 /* copies from mat2 to mat1 */
 void copyMatrices(double** mat1, double** mat2, int n){
     int i,j;
+
     for (i=0; i<n; i++){
         for (j=0; j<n; j++){
             mat1[i][j] = mat2[i][j];
@@ -312,8 +306,8 @@ void copyMatrices(double** mat1, double** mat2, int n){
 double** createMatrixI(int n){
     double** i_matrix;
     int i;
-
     i_matrix = allocateMem(n,n);
+
     for (i=0; i<n; i++)
         i_matrix[i][i] = 1;
 
@@ -324,8 +318,8 @@ double** createMatrixI(int n){
 void matrixTranspose(double** mat, int n){
     int i, j;
     double** trans_matrix;
-
     trans_matrix = allocateMem(n, n);
+
     for (i=0; i<n; i++){
         for (j=0; j<n; j++){
             trans_matrix[i][j] = mat[i][j];
@@ -373,7 +367,6 @@ double** createMatrixT(struct eigens* eigens_arr, int n, int k){
     double sum;
     double** t_matrix;
     double** u_matrix;
-
     t_matrix = allocateMem(n, k);
     u_matrix = allocateMem(n, k);
 
@@ -406,13 +399,13 @@ double** createMatrixT(struct eigens* eigens_arr, int n, int k){
 double* copyToEigenVectors(double* vec_matrix, int n){
     int i;
     double* vector;
-
     vector = (double*) calloc(n, sizeof(double));
     if (vector == NULL)
         errorOccured();
     
     for (i = 0; i < n; i++)
         vector[i] = vec_matrix[i];
+    
     return vector;
 }
 
@@ -433,9 +426,9 @@ void matrixMult(int rows,int columns,double** mat1,double** mat2,double** result
 double offFunc(double** a_matrix, double** a_tag_matrix, int n){
     double off_a, off_a_tag;
     int i, j;
-    
     off_a = 0;
     off_a_tag = 0;
+
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++){
             if (i==j)
@@ -444,14 +437,15 @@ double offFunc(double** a_matrix, double** a_tag_matrix, int n){
             off_a_tag += pow(a_tag_matrix[i][j], 2);
         }
     }
+
     return (off_a - off_a_tag);
 }
 
 double** jacobiMatForPrint(struct eigens* eigens_arr, int n){
     double** jacobi_matrix;
     int i, j;
-
     jacobi_matrix = allocateMem(n, n);
+
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++)
             jacobi_matrix[j][i] = eigens_arr[i].vector[j];
@@ -498,7 +492,6 @@ void printMatrix(double** matrix, int n, int vec_length){
 double** allocateMem(int n, int vec_length){ 
     int i;
     double** matrix;
-
     matrix = (double **)calloc(n, sizeof(double *));
     if (matrix == NULL)
         errorOccured();
@@ -510,6 +503,7 @@ double** allocateMem(int n, int vec_length){
             errorOccured();
         }
     }
+
     return matrix;
 }
 
@@ -525,7 +519,6 @@ double* retrieveLargestIndexesCS(double** a_matrix, int n){
     int i, j, lar_i, lar_j;
     double* ret_arr;
     double theta, t;
-
     lar_i = 0;
     lar_j= 1;
     ret_arr = (double*)calloc(4, sizeof(double));
@@ -556,6 +549,7 @@ double* retrieveLargestIndexesCS(double** a_matrix, int n){
         ret_arr[2] = retrieveC(t); /* ret_arr[2] = c */
         ret_arr[3] = retrieveS(ret_arr[2], t); /* ret_arr[3] = s */
     }
+
     return ret_arr;
 }
 
@@ -588,8 +582,8 @@ double** createMatrixP(int n, double* variables){
     lar_j = (int)variables[1];
     c = variables[2];
     s = variables[3];
-
     p_matrix = createMatrixI(n);
+
     p_matrix[lar_i][lar_i] = c;
     p_matrix[lar_j][lar_j] = c;
     p_matrix[lar_i][lar_j] = s;
@@ -628,10 +622,8 @@ void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,in
     int* elements_location;
     int* items_number_clusters;
     double** old_centroids;
-
     converge_bit = 1; 
     iteration_number = 0;
-
     elements_location = (int*)calloc(n, sizeof(int));
     if (!elements_location)
         errorOccured();
@@ -659,25 +651,25 @@ void getFinalCentroids(double** centroids,double** elements,int k,int d,int n,in
 void resetCentroids(double** centroids,int k, int d){
     int i,j;
 
-    for (i=0;i<k;i++)
-        for (j=0;j<d;j++)
+    for (i=0 ;i<k; i++)
+        for (j=0; j<d; j++)
             centroids[i][j]=0.0;                
 }
 
 void initClusters(int* elements_loc, int* items_number_clusters, int n, int k){
     int i;
 
-    for (i=0;i<n;i++)
+    for (i=0; i<n; i++)
         elements_loc[i]=0;
-    for (i=0;i<k;i++)
+    for (i=0; i<k; i++)
         items_number_clusters[i]=0;
 }
 
 void saveCentroids(double** old_centroids, double** centroids, int k, int d){
     int i,j;
 
-    for (i=0;i<k;i++){
-            for (j=0;j<d;j++)
+    for (i=0; i<k; i++){
+            for (j=0; j<d; j++)
                 old_centroids[i][j] = centroids[i][j];
         }
 }
@@ -714,14 +706,14 @@ void assignCentroids(double** ele,double** cntrds,int* in_clstrs,int* ele_loc,in
 void updateCentroids(double** cntrds,double** ele,int* in_clstrs,int *ele_loc,int d,int n,int k){
     int m, i, q;
 
-    for (i=0;i<k;i++){
-            for (m=0;m<n;m++){
+    for (i=0; i<k; i++){
+            for (m=0; m<n; m++){
                 if (ele_loc[m]==i){
-                    for (q=0;q<d;q++)
+                    for (q=0; q<d; q++)
                         cntrds[i][q]+=ele[m][q];
                 }
             }
-            for (q=0;q<d;q++){
+            for (q=0; q<d; q++){
                 if (cntrds[i][q]==0){
                     continue;
                 }
