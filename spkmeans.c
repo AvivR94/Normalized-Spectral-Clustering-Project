@@ -7,10 +7,7 @@
 #define EPSILON 0.00001
 
 int main(int argc, char* argv[]){
-    int n;
-    int i;
-    int j;
-    int r;
+    int n, i, j, r;
     int vec_length;
     char* goal;
     char* input_filename;
@@ -18,11 +15,11 @@ int main(int argc, char* argv[]){
     FILE* input_file;
     double vector_item;
     char tav;
+
     if (argc != 3){
         printf ("Invalid Input!");
         exit(1);
     }
-
     goal = argv[1]; /* the enum type */
     input_filename = argv[2];
 
@@ -46,9 +43,7 @@ int main(int argc, char* argv[]){
     }
     fseek(input_file,0,0); /* rewind file */
 
-    /* initiallization of vectors matrix */
     vectors_matrix = allocateMem(n, vec_length);
-
     /* insert vectors to vectors_matrix */
     for (i = 0; i < n; i++){
         for (j = 0; j < vec_length; j++){
@@ -57,7 +52,7 @@ int main(int argc, char* argv[]){
         }
     }
     r = fclose(input_file);
-    if (r !=0 ){
+    if (r != 0){
         errorOccured();
     }
     /* check which goal to choose */
@@ -128,14 +123,9 @@ void ddg(double** vectors_matrix, int n, int vec_length){
 
 double** ddgCalc(double** w_matrix, int n){
     double** d_matrix;
-    int i;
-    int j;
+    int i,j;
 
     d_matrix = allocateMem(n, n);
-    for (i = 0; i < n; i++)
-        for (j = 0; j < n; j++)
-            d_matrix[i][j] = 0;
-
     /* the sum of each row goes in the diagonal line of d_matrix */
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++)
