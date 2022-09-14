@@ -10,13 +10,13 @@ static void makeListFromMatrix(PyObject* lst,double** matrix,int n,int k){
     int i, j;
     PyObject* row;
 
-    for(i = 0; i < n; i++){
+    for (i = 0; i < n; i++){
         row = PyList_New(0);
-        if(!row){
+        if (!row){
             Py_DECREF(lst);
             errorOccured();
         }
-        for(j = 0; j < k; j++){
+        for (j = 0; j < k; j++){
             PyList_Append(row,PyFloat_FromDouble((double)matrix[i][j]));
         }
         PyList_Append(lst, row);
@@ -31,7 +31,7 @@ static double** makeMatrixFromPyInput(PyObject* py_matrix,int n,int vec_length)
     PyObject* element;
     new_matrix = allocateMem(n, vec_length);
 
-    for(i = 0; i < n; i++){
+    for (i = 0; i < n; i++){
         for (j = 0; j < vec_length ; j++) {
             element = PyList_GetItem(py_matrix, (vec_length*i) + j);
             new_matrix[i][j] = PyFloat_AsDouble(element);
@@ -66,11 +66,11 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
 
     original_matrix = makeMatrixFromPyInput(py_matrix, n, vec_length);
     final_mat = PyList_New(0);
-    if(!final_mat)
+    if (!final_mat)
         errorOccured();
     
     /* choose which goal to perform */
-    if(strcmp(goal, "wam") == 0){
+    if (strcmp(goal, "wam") == 0){
         w_matrix = wamCalc(original_matrix, n, vec_length);
         makeListFromMatrix(final_mat, w_matrix, n, n);
 
@@ -102,16 +102,16 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         eigens_arr = jacobiCalc(original_matrix, n, 0);
         jacobi_matrix = jacobiMatForPrint(eigens_arr, n);
         eigens_list = PyList_New(0);
-        if(!eigens_list){
+        if (!eigens_list){
             Py_DECREF(final_mat);
             errorOccured();
         }
-        for(i=0; i<n; i++){
+        for (i=0; i<n; i++){
             PyList_Append(eigens_list, PyFloat_FromDouble((double)eigens_arr[i].value));
         }
         PyList_Append(final_mat, eigens_list);
         makeListFromMatrix(final_mat, jacobi_matrix, n, n);
-        for(i = 0; i < n ; i++){
+        for (i = 0; i < n ; i++){
             free(eigens_arr[i].vector);
         }
         free(eigens_arr);
@@ -124,12 +124,12 @@ static PyObject* getMatrixByGoal(PyObject *self, PyObject *args){
         d_matrix = ddgCalc(w_matrix, n);
         l_matrix = lnormCalc(w_matrix, d_matrix, n);
         eigens_arr = jacobiCalc(l_matrix, n, 1);
-        if(k == 0)
+        if (k == 0)
             k = eigengapHeuristic(eigens_arr, n);
         t_matrix = createMatrixT(eigens_arr, n, k);
         makeListFromMatrix(final_mat, t_matrix, n, k);
 
-        for(i = 0; i < n ; i++){
+        for (i = 0; i < n ; i++){
             free(eigens_arr[i].vector);
         }
         freeMatrix(w_matrix, n);
@@ -165,7 +165,7 @@ static PyObject* fit(PyObject *self, PyObject *args){
     /* K-means operation done by spkmeans.c functions */
     getFinalCentroids(centroids, elements, k, d, n, max_iter, 0);
     centroids_arr = PyList_New(0);
-    if(!centroids_arr)
+    if (!centroids_arr)
         errorOccured();
     makeListFromMatrix(centroids_arr, centroids, k, k);
 
@@ -178,8 +178,8 @@ static PyObject* fit(PyObject *self, PyObject *args){
  /* Python C-API functions */
 static PyMethodDef spkmeansmoduleMethods[] = {
         {"getMatrixByGoal", (PyCFunction) getMatrixByGoal, METH_VARARGS, PyDoc_STR
-        ("c-api for python, retrieving the matrix accoring to the goal")},
-        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("Kmeans++")},
+        ("C-api for python, retrieving the matrix accoring to the goal")},
+        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("Kmeans")},
         
         {NULL,  NULL, 0, NULL}
 };
@@ -194,10 +194,10 @@ static struct PyModuleDef _moduledef = {
 
 PyMODINIT_FUNC PyInit_spkmeansmodule(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&_moduledef);
-    if(!m){
+    PyObject *module;
+    module = PyModule_Create(&_moduledef);
+    if (!module){
         errorOccured();
     }
-    return m;
+    return module;
 }

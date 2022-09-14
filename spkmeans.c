@@ -17,7 +17,6 @@ int main(int argc, char* argv[]){
     double** vectors_matrix;
     FILE* input_file;
     double vector_item;
-    char comma;
     char tav;
     if (argc != 3){
         printf ("Invalid Input!");
@@ -53,16 +52,16 @@ int main(int argc, char* argv[]){
     /* insert vectors to vectors_matrix */
     for (i = 0; i < n; i++){
         for (j = 0; j < vec_length; j++){
-            fscanf(input_file, "%lf%c", &vector_item, &comma);
+            fscanf(input_file, "%lf%c", &vector_item, &tav);
             vectors_matrix[i][j] = vector_item;
         }
     }
     r = fclose(input_file);
-    if (r!=0){
+    if (r !=0 ){
         errorOccured();
     }
     /* check which goal to choose */
-        if(strcmp(goal, "wam") == 0){
+        if (strcmp(goal, "wam") == 0){
             wam(vectors_matrix, n, vec_length);
         }
         else if (strcmp(goal, "ddg") == 0){
@@ -73,6 +72,10 @@ int main(int argc, char* argv[]){
         }
         else if (strcmp(goal, "jacobi") == 0){
             jacobi(vectors_matrix, n);
+        }
+        else {
+            printf ("Invalid Input!");
+            exit(1);
         }
         
     freeMatrix(vectors_matrix, n);
@@ -233,7 +236,7 @@ void jacobi(double** vectors_matrix, int n){
     eigens_arr = jacobiCalc(vectors_matrix, n, 0);
     printJacobi(eigens_arr, n);
 
-    for(i=0; i<n; i++)
+    for (i=0; i<n; i++)
         free(eigens_arr[i].vector);
     free(eigens_arr);
 }
@@ -289,7 +292,7 @@ struct eigens* jacobiCalc(double** a_matrix, int n, int sort){
     /* transpose for eigenvectors in rows, easier to work with */
     matrixTranspose(v_matrix, n); 
 
-    for(i = 0; i < n; i++){
+    for (i = 0; i < n; i++){
         eigens_arr[i].index = i;
         eigens_arr[i].value = a_matrix[i][i];
         eigens_arr[i].vector = copyToEigenVectors(v_matrix[i], n);
@@ -333,14 +336,14 @@ void matrixTranspose(double** mat, int n){
     double** trans_matrix;
 
     trans_matrix = allocateMem(n, n);
-    for(i=0; i<n; i++){
-        for(j=0; j<n; j++){
+    for (i=0; i<n; i++){
+        for (j=0; j<n; j++){
             trans_matrix[i][j] = mat[i][j];
         }
     }
 
-    for(i=0; i<n; i++){
-        for(j=0; j<n; j++){
+    for (i=0; i<n; i++){
+        for (j=0; j<n; j++){
             mat[j][i] = trans_matrix[i][j];
         }
     }
@@ -369,7 +372,7 @@ int comparator(const void* first, const void* second){
 void freeMatrix(double** matrix, int n){
     int i;
 
-    for(i=0; i < n; i++)
+    for (i=0; i < n; i++)
         free(matrix[i]);
     free(matrix);
 }
@@ -384,20 +387,20 @@ double** createMatrixT(struct eigens* eigens_arr, int n, int k){
     t_matrix = allocateMem(n, k);
     u_matrix = allocateMem(n, k);
 
-    for(i = 0; i < k; i++){
-        for(j = 0; j < n; j++){
+    for (i = 0; i < k; i++){
+        for (j = 0; j < n; j++){
              u_matrix[j][i] = eigens_arr[i].vector[j];
         }
     }
 
-    for(i = 0; i < n; i++){
+    for (i = 0; i < n; i++){
         sum = 0;
-        for(j = 0; j < k; j++)
+        for (j = 0; j < k; j++)
             sum += pow(u_matrix[i][j], 2);
         sum = sqrt(sum);
 
-        for(j = 0; j < k; j++){
-            if(sum != 0)
+        for (j = 0; j < k; j++){
+            if (sum != 0)
                 t_matrix[i][j] = ((u_matrix[i][j]) / (sum));
             else
                 t_matrix[i][j] = 0.0;
@@ -418,7 +421,7 @@ double* copyToEigenVectors(double* vec_matrix, int n){
     if (vector == NULL)
         errorOccured();
     
-    for(i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
         vector[i] = vec_matrix[i];
     return vector;
 }
@@ -459,8 +462,8 @@ double** jacobiMatForPrint(struct eigens* eigens_arr, int n){
     int i, j;
 
     jacobi_matrix = allocateMem(n, n);
-    for(i = 0; i < n; i++){
-        for(j = 0; j < n; j++)
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++)
             jacobi_matrix[j][i] = eigens_arr[i].vector[j];
     }
     return jacobi_matrix;
@@ -471,11 +474,11 @@ void printJacobi(struct eigens* eigens_arr, int n){
     double** jacobi_matrix;
 
     for (i = 0; i < n; i++){
-         if(eigens_arr[i].value < 0 && eigens_arr[i].value > -0.00005)
+         if (eigens_arr[i].value < 0 && eigens_arr[i].value > -0.00005)
             printf("0.0000");
         else
             printf("%.4f", eigens_arr[i].value);
-        if(i != n - 1)
+        if (i != n - 1)
             printf(",");
     }
     printf("\n");
@@ -488,13 +491,13 @@ void printJacobi(struct eigens* eigens_arr, int n){
 void printMatrix(double** matrix, int n, int vec_length){
     int i, j;
     
-    for(i = 0; i < n; i++){
-        for(j = 0; j < vec_length; j++) {
+    for (i = 0; i < n; i++){
+        for (j = 0; j < vec_length; j++) {
             if (matrix[i][j] < 0 && matrix[i][j] > -0.00005)
                 printf("0.0000");
             else
                 printf("%.4f", matrix[i][j]);
-            if(j != vec_length - 1)
+            if (j != vec_length - 1)
                 printf(",");
         }
         printf("\n");
@@ -614,8 +617,8 @@ void updateMatrixAtag(double** a_tag_mat,double** a_mat,int n,double* variables)
     c = variables[2];
     s = variables[3];
 
-    for(i=0; i<n; i++){
-        if((i != lar_i) || (i != lar_j)){
+    for (i=0; i<n; i++){
+        if ((i != lar_i) || (i != lar_j)){
                 a_tag_mat[i][lar_i] = c*a_mat[i][lar_i] - s*a_mat[i][lar_j];
                 a_tag_mat[lar_i][i] = c*a_mat[i][lar_i] - s*a_mat[i][lar_j];
                 a_tag_mat[i][lar_j] = c*a_mat[i][lar_j] + s*a_mat[i][lar_i];
@@ -667,7 +670,7 @@ void resetCentroids(double** centroids,int k, int d){
     int i,j;
 
     for (i=0;i<k;i++)
-        for(j=0;j<d;j++)
+        for (j=0;j<d;j++)
             centroids[i][j]=0.0;                
 }
 
@@ -743,7 +746,7 @@ int convergence(double** old_centroids,double** centroids,int k,int d,int eps){
     double sum;
 
     converge_bit = 0;
-    for(i=0; i<k; i++){
+    for (i=0; i<k; i++){
         sum = 0.0;
         for (j = 0; j<d; j++)
             sum += pow((old_centroids[i][j] + centroids[i][j]), 2);

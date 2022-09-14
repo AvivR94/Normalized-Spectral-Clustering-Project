@@ -1,9 +1,10 @@
 import sys
 import numpy as np
 import spkmeansmodule as spkmm
+np.random.seed(0) # set the seed at the beginning of the code
 
+# K-means++ algorithm
 def initializeCentroids(vectors, k, n):
-    np.random.seed(0)
     centroids = []
     random_index = np.random.randint(n)
     centroids.append(vectors[random_index])
